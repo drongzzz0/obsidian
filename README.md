@@ -1,5 +1,7 @@
 # ResearchKB Agent Memory
 
+[![CI](https://github.com/drongzzz0/obsidian/actions/workflows/ci.yml/badge.svg)](https://github.com/drongzzz0/obsidian/actions/workflows/ci.yml)
+
 English | [简体中文](README.zh-CN.md)
 
 A lightweight workflow template for giving Codex, Claude Code, Cursor, and other research agents access to local literature evidence, experiment history, and failure memory.
@@ -71,6 +73,8 @@ If you already have a ResearchKB installation, point the script at it:
 python .\scripts\init_researchkb_workspace.py --root "<ResearchKBRoot>" --project-root "<ProjectRoot>"
 ```
 
+See [docs/quickstart.md](docs/quickstart.md) for the full 10-minute loop.
+
 ## How To Use With Agents
 
 Use direct prompts like these:
@@ -127,6 +131,7 @@ For KV-cache reuse work, see [researchkb/contracts/kv_cache_reuse_metrics_contra
 |-- assets/
 |   `-- readme-workflow-v2.png
 |-- docs/
+|   |-- quickstart.md
 |   |-- architecture.md
 |   |-- schema_minimal.md
 |   `-- agent_tool_contracts.md
@@ -179,6 +184,7 @@ For KV-cache reuse work, see [researchkb/contracts/kv_cache_reuse_metrics_contra
 
 ## Design Docs
 
+- [docs/quickstart.md](docs/quickstart.md): clone -> bootstrap -> health check -> harvest -> agent prompt.
 - [docs/architecture.md](docs/architecture.md): project run -> harvest -> ResearchKB -> agent query loop.
 - [docs/schema_minimal.md](docs/schema_minimal.md): minimal records and evidence provenance fields.
 - [docs/agent_tool_contracts.md](docs/agent_tool_contracts.md): expected tool inputs, outputs, and evidence-grounded answer format.

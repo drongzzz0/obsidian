@@ -5,6 +5,7 @@ This directory describes the portable ResearchKB Agent Memory contracts. It shou
 ## Core Docs
 
 - [architecture.md](architecture.md): end-to-end loop and component boundaries.
+- [quickstart.md](quickstart.md): 10-minute first-run loop.
 - [schema_minimal.md](schema_minimal.md): minimal schema for papers, claims, runs, failure cases, and evidence links.
 - [agent_tool_contracts.md](agent_tool_contracts.md): expected tool inputs and outputs for agents.
 - [../researchkb/contracts/experiment_metrics_contract.md](../researchkb/contracts/experiment_metrics_contract.md): generic experiment output contract.

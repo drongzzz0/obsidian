@@ -24,7 +24,7 @@ jobs:
         run: python -m py_compile researchkb/rk_health.py scripts/cursor_mcp_smoke.py scripts/init_researchkb_workspace.py scripts/public_repo_scan.py
 
       - name: Run tests
-        run: python -m pytest
+        run: python -m pytest -vv --tb=short
 
       - name: Validate example JSON
         run: |

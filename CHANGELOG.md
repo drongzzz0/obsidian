@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Nothing yet.
+
+## v0.1.0 - 2026-06-17
+
 - Added first-run bootstrap script for a local ResearchKB smoke workspace.
 - Added GitHub Actions CI for compilation, tests, JSON validation, and public hygiene scanning.
 - Split experiment metrics contracts into a generic contract and a KV-cache reuse extension.

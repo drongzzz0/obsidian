@@ -1,5 +1,7 @@
 # ResearchKB Agent Memory
 
+[![CI](https://github.com/drongzzz0/obsidian/actions/workflows/ci.yml/badge.svg)](https://github.com/drongzzz0/obsidian/actions/workflows/ci.yml)
+
 [English](README.md) | 简体中文
 
 一个轻量级工作流模板，用来让 Codex、Claude Code、Cursor 等 research agent 能查询本地文献证据、实验历史和失败经验。
@@ -71,6 +73,8 @@ python .\researchkb\rk_health.py --root .\.runtime\researchkb
 python .\scripts\init_researchkb_workspace.py --root "<ResearchKBRoot>" --project-root "<ProjectRoot>"
 ```
 
+完整 10 分钟闭环见 [docs/quickstart.md](docs/quickstart.md)。
+
 ## 怎么让 Agent 用它
 
 可以直接这样问：
@@ -127,6 +131,7 @@ KV-cache reuse 相关实验见 [researchkb/contracts/kv_cache_reuse_metrics_cont
 |-- assets/
 |   `-- readme-workflow-v2.png
 |-- docs/
+|   |-- quickstart.md
 |   |-- architecture.md
 |   |-- schema_minimal.md
 |   `-- agent_tool_contracts.md
@@ -179,6 +184,7 @@ KV-cache reuse 相关实验见 [researchkb/contracts/kv_cache_reuse_metrics_cont
 
 ## 核心设计文档
 
+- [docs/quickstart.md](docs/quickstart.md): clone -> bootstrap -> health check -> harvest -> agent prompt。
 - [docs/architecture.md](docs/architecture.md): project run -> harvest -> ResearchKB -> agent query 闭环。
 - [docs/schema_minimal.md](docs/schema_minimal.md): 最小记录结构和 evidence provenance 字段。
 - [docs/agent_tool_contracts.md](docs/agent_tool_contracts.md): agent 工具输入输出和 evidence-grounded answer 格式。
