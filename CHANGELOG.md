@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Improved `rk_health.py` with readiness levels, missing-table tolerance, `--root`, `--strict`, and next actions.
+- Added pytest coverage for empty, smoke, usable, mature, watch-list, and UTF-16 log cases.
 - Added public project hygiene files: `LICENSE`, `SECURITY.md`, `CONTRIBUTING.md`, and `ROADMAP.md`.
 - Cleaned public ignore rules to remove personal-project traces.
 - Clarified the first-run onboarding loop in README files.

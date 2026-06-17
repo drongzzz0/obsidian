@@ -1,7 +1,9 @@
 @echo off
 setlocal
-if "%RESEARCHKB_ROOT%"=="" (
-    echo Please set RESEARCHKB_ROOT to your local ResearchKB directory.
-    exit /b 2
+set "PYTHON_EXE=python"
+if not "%RESEARCHKB_ROOT%"=="" (
+    if exist "%RESEARCHKB_ROOT%\.venv\Scripts\python.exe" (
+        set "PYTHON_EXE=%RESEARCHKB_ROOT%\.venv\Scripts\python.exe"
+    )
 )
-"%RESEARCHKB_ROOT%\.venv\Scripts\python.exe" "%~dp0rk_health.py" %*
+"%PYTHON_EXE%" "%~dp0rk_health.py" %*

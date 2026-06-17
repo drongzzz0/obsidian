@@ -17,6 +17,7 @@ Run:
 
 ```powershell
 python -m py_compile .\researchkb\rk_health.py .\scripts\cursor_mcp_smoke.py
+python -m pytest
 rg -n "sk-|api[_-]?key|auth[_-]?token|password|secret|bearer" .
 rg -n "<your-username>|<private-host>|<private-project-name>" .
 git status -sb --ignored

@@ -129,6 +129,7 @@ KV-cache reuse 相关实验可以参考 [researchkb/kv_experiment_metrics_contra
 |-- LICENSE
 |-- ROADMAP.md
 |-- SECURITY.md
+|-- pyproject.toml
 |-- assets/
 |   `-- readme-workflow-v2.png
 |-- docs/
@@ -144,6 +145,8 @@ KV-cache reuse 相关实验可以参考 [researchkb/kv_experiment_metrics_contra
 |   `-- rk_health.py
 |-- scripts/
 |   `-- cursor_mcp_smoke.py
+|-- tests/
+|   `-- test_rk_health.py
 |-- .gitignore
 |-- README.zh-CN.md
 `-- README.md
@@ -196,6 +199,7 @@ git status -sb --ignored
 
 ```powershell
 python -m py_compile .\researchkb\rk_health.py .\scripts\cursor_mcp_smoke.py
+python -m pytest
 ```
 
 ```powershell

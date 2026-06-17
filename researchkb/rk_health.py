@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import platform
 import sqlite3
 import subprocess
 from datetime import datetime, timezone
@@ -10,39 +11,57 @@ from pathlib import Path
 from typing import Any
 
 
-ROOT = Path(os.environ.get("RESEARCHKB_ROOT", str(Path.home() / "ResearchKB")))
-DB_PATH = ROOT / "db" / "literature.sqlite"
-PATHS_FILE = ROOT / "config" / "auto_harvest_paths.txt"
-LOG_FILE = ROOT / "logs" / "auto_harvest.log"
+REQUIRED_TABLES = ["papers", "chunks", "claims", "problem_cases", "experiment_runs"]
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Report ResearchKB workflow health.")
     parser.add_argument("--json", action="store_true", help="Emit machine-readable JSON.")
+    parser.add_argument("--root", type=Path, help="ResearchKB root directory. Overrides RESEARCHKB_ROOT.")
+    parser.add_argument("--strict", action="store_true", help="Use mature-library thresholds for readiness judgement.")
     args = parser.parse_args()
 
-    report = build_report()
+    report = build_report(root=resolve_root(args.root), strict=args.strict)
     if args.json:
         print(json.dumps(report, ensure_ascii=False, indent=2))
     else:
         print_text_report(report)
 
 
-def build_report() -> dict[str, Any]:
+def resolve_root(root: Path | None = None) -> Path:
+    if root is not None:
+        return root.expanduser().resolve()
+    env_root = os.environ.get("RESEARCHKB_ROOT")
+    if env_root:
+        return Path(env_root).expanduser().resolve()
+    return (Path.home() / "ResearchKB").resolve()
+
+
+def build_report(root: Path | None = None, strict: bool = False, check_scheduled: bool = True) -> dict[str, Any]:
+    root = resolve_root(root)
+    db_path = root / "db" / "literature.sqlite"
+    paths_file = root / "config" / "auto_harvest_paths.txt"
+    log_file = root / "logs" / "auto_harvest.log"
     report: dict[str, Any] = {
         "generated_at": datetime.now(timezone.utc).astimezone().isoformat(timespec="seconds"),
-        "root": str(ROOT),
-        "scheduled_task": scheduled_task_status(),
-        "watch_paths": watch_paths(),
-        "auto_harvest_log": harvest_log_status(),
-        "database": database_status(),
+        "root": str(root),
+        "strict": strict,
+        "scheduled_task": scheduled_task_status(check=check_scheduled),
+        "watch_paths": watch_paths(paths_file),
+        "auto_harvest_log": harvest_log_status(log_file),
+        "database": database_status(db_path),
         "judgement": {},
     }
-    report["judgement"] = judge(report)
+    report["judgement"] = judge(report, strict=strict)
     return report
 
 
-def scheduled_task_status() -> dict[str, Any]:
+def scheduled_task_status(check: bool = True) -> dict[str, Any]:
+    if not check:
+        return {"checked": False, "skipped": True, "reason": "disabled"}
+    if platform.system().lower() != "windows":
+        return {"checked": False, "skipped": True, "reason": "non_windows"}
+
     command = [
         "powershell",
         "-NoProfile",
@@ -51,28 +70,28 @@ def scheduled_task_status() -> dict[str, Any]:
             "try { "
             "$t=Get-ScheduledTask -TaskName 'ResearchKB-AutoHarvest'; "
             "$i=Get-ScheduledTaskInfo -TaskName 'ResearchKB-AutoHarvest'; "
-            "[pscustomobject]@{exists=$true;state=$t.State.ToString();"
+            "[pscustomobject]@{checked=$true;exists=$true;state=$t.State.ToString();"
             "last_run=$i.LastRunTime.ToString('yyyy-MM-dd HH:mm:ss');"
             "last_result=$i.LastTaskResult;"
             "next_run=$i.NextRunTime.ToString('yyyy-MM-dd HH:mm:ss');"
             "missed=$i.NumberOfMissedRuns} | ConvertTo-Json -Compress "
-            "} catch { [pscustomobject]@{exists=$false;error=$_.Exception.Message} | ConvertTo-Json -Compress }"
+            "} catch { [pscustomobject]@{checked=$true;exists=$false;error=$_.Exception.Message} | ConvertTo-Json -Compress }"
         ),
     ]
     try:
         proc = subprocess.run(command, capture_output=True, text=True, timeout=10, check=False)
         if proc.stdout.strip():
             return json.loads(proc.stdout)
-        return {"exists": False, "error": proc.stderr.strip() or "No scheduled task output."}
+        return {"checked": True, "exists": False, "error": proc.stderr.strip() or "No scheduled task output."}
     except Exception as exc:
-        return {"exists": False, "error": str(exc)}
+        return {"checked": True, "exists": False, "error": str(exc)}
 
 
-def watch_paths() -> list[dict[str, Any]]:
-    if not PATHS_FILE.exists():
+def watch_paths(paths_file: Path) -> list[dict[str, Any]]:
+    if not paths_file.exists():
         return []
     rows: list[dict[str, Any]] = []
-    for raw in PATHS_FILE.read_text(encoding="utf-8").splitlines():
+    for raw in paths_file.read_text(encoding="utf-8").splitlines():
         line = raw.strip()
         if not line or line.startswith("#"):
             continue
@@ -81,17 +100,17 @@ def watch_paths() -> list[dict[str, Any]]:
     return rows
 
 
-def harvest_log_status() -> dict[str, Any]:
-    if not LOG_FILE.exists():
+def harvest_log_status(log_file: Path) -> dict[str, Any]:
+    if not log_file.exists():
         return {"exists": False}
-    lines = read_text_fallback(LOG_FILE).splitlines()
+    lines = read_text_fallback(log_file).splitlines()
     started = _last_matching_line(lines, "ResearchKB auto harvest started")
     finished = _last_matching_line(lines, "ResearchKB auto harvest finished")
     parse_failed = _last_json_field(lines, "parse_failed")
     recorded = _last_json_field(lines, "recorded")
     return {
         "exists": True,
-        "size_bytes": LOG_FILE.stat().st_size,
+        "size_bytes": log_file.stat().st_size,
         "recent_started": started,
         "recent_finished": finished,
         "last_recorded": recorded,
@@ -122,50 +141,39 @@ def _last_json_field(lines: list[str], field: str) -> int | None:
         if needle not in line:
             continue
         try:
-            return int(line.split(":", 1)[1].strip().rstrip(","))
+            fragment = line[line.index(needle) :]
+            return int(fragment.split(":", 1)[1].split(",", 1)[0].strip().rstrip("}"))
         except Exception:
             return None
     return None
 
 
-def database_status() -> dict[str, Any]:
-    if not DB_PATH.exists():
-        return {"exists": False}
-    conn = sqlite3.connect(DB_PATH)
+def database_status(db_path: Path) -> dict[str, Any]:
+    if not db_path.exists():
+        return {
+            "exists": False,
+            "path": str(db_path),
+            "tables": [],
+            "missing_tables": REQUIRED_TABLES,
+            "counts": {},
+            "run_stats": {},
+            "latest_runs": [],
+        }
+
+    conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     try:
-        counts = {}
-        for table in ["papers", "chunks", "claims", "problem_cases", "experiment_runs"]:
-            counts[table] = conn.execute(f"select count(*) as n from {table}").fetchone()["n"]
-        run_stats = dict(
-            conn.execute(
-                """
-                select
-                  count(*) as total,
-                  sum(case when project='KV Cache Reuse' then 1 else 0 end) as kv_runs,
-                  sum(case when metrics_json is not null and trim(metrics_json) not in ('','{}') then 1 else 0 end) as with_metrics,
-                  sum(case when log_path is not null and trim(log_path)!='' then 1 else 0 end) as with_logs,
-                  sum(case when status like '%fail%' or failure_type is not null and trim(failure_type)!='' then 1 else 0 end) as failure_labeled,
-                  min(created_at) as first_seen,
-                  max(created_at) as last_seen
-                from experiment_runs
-                """
-            ).fetchone()
-        )
-        latest_runs = [
-            dict(row)
-            for row in conn.execute(
-                """
-                select run_id, project, status, failure_type, created_at, log_path
-                from experiment_runs
-                order by created_at desc
-                limit 5
-                """
-            )
-        ]
+        tables = list_tables(conn)
+        counts = {table: count_rows(conn, table) for table in REQUIRED_TABLES if table in tables}
+        missing_tables = [table for table in REQUIRED_TABLES if table not in tables]
+        run_stats = experiment_run_stats(conn) if "experiment_runs" in tables else {}
+        latest_runs = latest_experiment_runs(conn) if "experiment_runs" in tables else []
         return {
             "exists": True,
-            "size_mb": round(DB_PATH.stat().st_size / 1024 / 1024, 2),
+            "path": str(db_path),
+            "size_mb": round(db_path.stat().st_size / 1024 / 1024, 2),
+            "tables": sorted(tables),
+            "missing_tables": missing_tables,
             "counts": counts,
             "run_stats": run_stats,
             "latest_runs": latest_runs,
@@ -174,55 +182,187 @@ def database_status() -> dict[str, Any]:
         conn.close()
 
 
-def judge(report: dict[str, Any]) -> dict[str, Any]:
-    task_ok = bool(report["scheduled_task"].get("exists")) and report["scheduled_task"].get("last_result") == 0
-    log_ok = bool(report["auto_harvest_log"].get("exists")) and report["auto_harvest_log"].get("last_parse_failed") in (0, None)
+def list_tables(conn: sqlite3.Connection) -> set[str]:
+    rows = conn.execute("select name from sqlite_master where type='table'").fetchall()
+    return {str(row["name"]) for row in rows}
+
+
+def table_columns(conn: sqlite3.Connection, table: str) -> set[str]:
+    rows = conn.execute(f"pragma table_info({quote_identifier(table)})").fetchall()
+    return {str(row["name"]) for row in rows}
+
+
+def count_rows(conn: sqlite3.Connection, table: str) -> int:
+    row = conn.execute(f"select count(*) as n from {quote_identifier(table)}").fetchone()
+    return int(row["n"])
+
+
+def quote_identifier(name: str) -> str:
+    escaped = name.replace('"', '""')
+    return f'"{escaped}"'
+
+
+def experiment_run_stats(conn: sqlite3.Connection) -> dict[str, Any]:
+    columns = table_columns(conn, "experiment_runs")
+    rows = [dict(row) for row in conn.execute("select * from experiment_runs").fetchall()]
+    total = len(rows)
+    with_metrics = sum(1 for row in rows if has_nonempty_value(row, "metrics_json", columns) or has_nonempty_value(row, "metrics", columns))
+    with_logs = sum(1 for row in rows if has_nonempty_value(row, "log_path", columns) or has_nonempty_value(row, "logs", columns))
+    failure_labeled = sum(1 for row in rows if row_is_failure_labeled(row, columns))
+    kv_runs = sum(1 for row in rows if str(row.get("project", "")).lower() == "kv cache reuse") if "project" in columns else 0
+    created_values = [str(row.get("created_at")) for row in rows if row.get("created_at")] if "created_at" in columns else []
+    return {
+        "total": total,
+        "kv_runs": kv_runs,
+        "with_metrics": with_metrics,
+        "with_logs": with_logs,
+        "failure_labeled": failure_labeled,
+        "first_seen": min(created_values) if created_values else None,
+        "last_seen": max(created_values) if created_values else None,
+        "columns": sorted(columns),
+    }
+
+
+def has_nonempty_value(row: dict[str, Any], key: str, columns: set[str]) -> bool:
+    if key not in columns:
+        return False
+    value = row.get(key)
+    if value is None:
+        return False
+    return str(value).strip() not in ("", "{}")
+
+
+def row_is_failure_labeled(row: dict[str, Any], columns: set[str]) -> bool:
+    if has_nonempty_value(row, "failure_type", columns):
+        return True
+    if "status" in columns:
+        return "fail" in str(row.get("status", "")).lower()
+    return False
+
+
+def latest_experiment_runs(conn: sqlite3.Connection, limit: int = 5) -> list[dict[str, Any]]:
+    columns = table_columns(conn, "experiment_runs")
+    selected = [col for col in ["run_id", "project", "experiment", "status", "failure_type", "created_at", "log_path"] if col in columns]
+    if not selected:
+        return []
+    order_clause = " order by created_at desc" if "created_at" in columns else ""
+    sql = f"select {', '.join(quote_identifier(col) for col in selected)} from experiment_runs{order_clause} limit ?"
+    return [dict(row) for row in conn.execute(sql, (limit,)).fetchall()]
+
+
+def judge(report: dict[str, Any], strict: bool = False) -> dict[str, Any]:
     db = report["database"]
     counts = db.get("counts", {})
     run_stats = db.get("run_stats", {})
-    metrics_total = int(run_stats.get("total") or 0)
+    total_runs = int(run_stats.get("total") or 0)
     with_metrics = int(run_stats.get("with_metrics") or 0)
-    metrics_coverage = (with_metrics / metrics_total) if metrics_total else 0.0
-    watch_valid = sum(1 for item in report["watch_paths"] if item.get("exists"))
-    usable = task_ok and log_ok and counts.get("claims", 0) >= 3000 and counts.get("problem_cases", 0) >= 40
-    bottlenecks = []
-    if watch_valid < 3:
-        bottlenecks.append("watch_paths_too_narrow")
-    if metrics_coverage < 0.7:
-        bottlenecks.append("low_metrics_coverage")
+    metrics_coverage = (with_metrics / total_runs) if total_runs else 0.0
+    existing_watch_paths = sum(1 for item in report["watch_paths"] if item.get("exists"))
+    level = readiness_level(counts, total_runs, with_metrics, metrics_coverage, db.get("exists", False), strict)
+    can_query_runs = total_runs > 0
+    can_query_papers = int(counts.get("papers", 0)) > 0 and int(counts.get("chunks", 0)) > 0
+    can_query_failure_cases = int(counts.get("problem_cases", 0)) > 0
+    next_actions = next_actions_for(level, db, counts, total_runs, with_metrics, existing_watch_paths, metrics_coverage)
     return {
-        "usable": usable,
-        "task_ok": task_ok,
-        "log_ok": log_ok,
-        "watch_path_count": watch_valid,
+        "level": level,
+        "usable": level in ("usable", "mature"),
+        "can_query_runs": can_query_runs,
+        "can_query_papers": can_query_papers,
+        "can_query_failure_cases": can_query_failure_cases,
+        "watch_path_count": existing_watch_paths,
         "metrics_coverage": round(metrics_coverage, 4),
-        "bottlenecks": bottlenecks,
+        "missing_tables": db.get("missing_tables", []),
+        "next_actions": next_actions,
     }
+
+
+def readiness_level(
+    counts: dict[str, int],
+    total_runs: int,
+    with_metrics: int,
+    metrics_coverage: float,
+    db_exists: bool,
+    strict: bool,
+) -> str:
+    if not db_exists:
+        return "empty"
+    if strict:
+        if int(counts.get("claims", 0)) >= 3000 and int(counts.get("problem_cases", 0)) >= 40 and metrics_coverage >= 0.7:
+            return "mature"
+        if int(counts.get("papers", 0)) >= 20 and int(counts.get("chunks", 0)) >= 500 and total_runs >= 5:
+            return "usable"
+        if total_runs >= 1 and with_metrics >= 1:
+            return "smoke"
+        return "empty"
+    if int(counts.get("claims", 0)) >= 3000 and int(counts.get("problem_cases", 0)) >= 40 and metrics_coverage >= 0.7:
+        return "mature"
+    if int(counts.get("papers", 0)) >= 20 and int(counts.get("chunks", 0)) >= 500 and total_runs >= 5:
+        return "usable"
+    if total_runs >= 1 and with_metrics >= 1:
+        return "smoke"
+    return "empty"
+
+
+def next_actions_for(
+    level: str,
+    db: dict[str, Any],
+    counts: dict[str, int],
+    total_runs: int,
+    with_metrics: int,
+    existing_watch_paths: int,
+    metrics_coverage: float,
+) -> list[str]:
+    actions: list[str] = []
+    if not db.get("exists"):
+        actions.append("Create or point --root to a ResearchKB directory containing db/literature.sqlite.")
+    if db.get("missing_tables"):
+        actions.append("Create or map missing tables: " + ", ".join(db["missing_tables"]))
+    if total_runs == 0:
+        actions.append("Run rk-harvest on one experiment output folder.")
+    elif with_metrics == 0:
+        actions.append("Add metrics_json or metrics data to at least one experiment run.")
+    if existing_watch_paths == 0:
+        actions.append("Add one narrow project output folder to config/auto_harvest_paths.txt.")
+    if level == "smoke" and int(counts.get("papers", 0)) == 0:
+        actions.append("Ingest at least one paper batch or Zotero export to enable literature queries.")
+    if level in ("smoke", "usable") and metrics_coverage < 0.7:
+        actions.append("Increase metrics coverage by emitting metrics.json or METRIC key=value for more runs.")
+    if not actions:
+        actions.append("No immediate action required.")
+    return actions
 
 
 def print_text_report(report: dict[str, Any]) -> None:
     db = report["database"]
+    judgement = report["judgement"]
     print(f"ResearchKB health @ {report['generated_at']}")
     print(f"Root: {report['root']}")
+    print(f"Level: {judgement.get('level')}")
     print("")
     print("[scheduled task]")
     task = report["scheduled_task"]
-    print(
-        "exists={exists} state={state} last_result={last_result} last_run={last_run} next_run={next_run} missed={missed}".format(
-            **{
-                "exists": task.get("exists"),
-                "state": task.get("state"),
-                "last_result": task.get("last_result"),
-                "last_run": task.get("last_run"),
-                "next_run": task.get("next_run"),
-                "missed": task.get("missed"),
-            }
+    if task.get("skipped"):
+        print(f"skipped={task.get('skipped')} reason={task.get('reason')}")
+    else:
+        print(
+            "exists={exists} state={state} last_result={last_result} last_run={last_run} next_run={next_run} missed={missed}".format(
+                **{
+                    "exists": task.get("exists"),
+                    "state": task.get("state"),
+                    "last_result": task.get("last_result"),
+                    "last_run": task.get("last_run"),
+                    "next_run": task.get("next_run"),
+                    "missed": task.get("missed"),
+                }
+            )
         )
-    )
     print("")
     print("[watch paths]")
-    for item in report["watch_paths"]:
-        print(f"{'OK' if item['exists'] else 'MISS'} {item['path']}")
+    if report["watch_paths"]:
+        for item in report["watch_paths"]:
+            print(f"{'OK' if item['exists'] else 'MISS'} {item['path']}")
+    else:
+        print("none")
     print("")
     print("[auto harvest log]")
     log = report["auto_harvest_log"]
@@ -232,11 +372,12 @@ def print_text_report(report: dict[str, Any]) -> None:
     print("")
     print("[database]")
     print(f"exists={db.get('exists')} size_mb={db.get('size_mb')}")
+    print(f"missing_tables={db.get('missing_tables')}")
     print(json.dumps(db.get("counts", {}), ensure_ascii=False))
     print(json.dumps(db.get("run_stats", {}), ensure_ascii=False))
     print("")
     print("[judgement]")
-    print(json.dumps(report["judgement"], ensure_ascii=False))
+    print(json.dumps(judgement, ensure_ascii=False, indent=2))
 
 
 if __name__ == "__main__":
