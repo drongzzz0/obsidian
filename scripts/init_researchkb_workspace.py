@@ -6,7 +6,6 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
-
 DEFAULT_PROJECT_NAME = "Smoke Test"
 
 
@@ -24,7 +23,11 @@ class InitResult:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Initialize a minimal ResearchKB Agent Memory smoke workspace.")
-    parser.add_argument("--root", type=Path, help="ResearchKB root. Defaults to RESEARCHKB_ROOT or .runtime/researchkb.")
+    parser.add_argument(
+        "--root",
+        type=Path,
+        help="ResearchKB root. Defaults to RESEARCHKB_ROOT or .runtime/researchkb.",
+    )
     parser.add_argument(
         "--project-root",
         type=Path,
@@ -87,8 +90,10 @@ def init_workspace(root: Path, project_root: Path, project_name: str, force: boo
         "experiment": "smoke-test",
         "run_id": "run_smoke_001",
         "status": "completed_positive",
+        "config_ref": "runs/smoke-test/config.synthetic.json",
         "dataset": "synthetic",
         "model": "example-model",
+        "seed": None,
         "metrics": {
             "accuracy": 0.842,
             "latency_ms": 128.5,

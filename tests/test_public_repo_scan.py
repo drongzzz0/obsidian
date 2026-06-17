@@ -4,7 +4,6 @@ import importlib.util
 import sys
 from pathlib import Path
 
-
 MODULE_PATH = Path(__file__).resolve().parents[1] / "scripts" / "public_repo_scan.py"
 SPEC = importlib.util.spec_from_file_location("public_repo_scan", MODULE_PATH)
 assert SPEC is not None
@@ -29,5 +28,21 @@ def test_public_repo_scan_skips_runtime_dirs(tmp_path: Path) -> None:
     runtime.mkdir()
     local_path = "C:" + "\\" + "Users" + "\\" + "mq" + "l16" + "\\" + "secret"
     (runtime / "private.txt").write_text(local_path + "\n", encoding="utf-8")
+
+    assert public_repo_scan.scan(tmp_path) == []
+
+
+def test_public_repo_scan_loads_local_deny_terms(tmp_path: Path) -> None:
+    (tmp_path / ".public-scan-local.txt").write_text("internal-demo-name\n", encoding="utf-8")
+    (tmp_path / "README.md").write_text("This mentions internal-demo-name.\n", encoding="utf-8")
+
+    matches = public_repo_scan.scan(tmp_path)
+
+    assert matches
+    assert matches[0][0] == "local deny term"
+
+
+def test_public_repo_scan_does_not_scan_local_deny_file_itself(tmp_path: Path) -> None:
+    (tmp_path / ".public-scan-local.txt").write_text("internal-demo-name\n", encoding="utf-8")
 
     assert public_repo_scan.scan(tmp_path) == []

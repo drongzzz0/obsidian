@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.org/researchkb-agent-memory/problem_case.schema.json",
+  "title": "Problem Case",
+  "type": "object",
+  "required": ["problem_id", "symptom", "context"],
+  "properties": {
+    "problem_id": { "type": "string", "minLength": 1 },
+    "symptom": { "type": "string", "minLength": 1 },
+    "context": { "type": ["object", "string"] },
+    "suspected_causes": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "tried_fixes": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "final_solution": { "type": ["string", "null"] },
+    "linked_runs": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "linked_papers": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "confidence": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "maximum": 1
+    }
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,11 @@
+# Optional local deny terms for scripts/public_repo_scan.py.
+#
+# Copy this file to .public-scan-local.txt and add private project names,
+# hostnames, usernames, domains, or other strings that must never appear in
+# public commits.
+#
+# .public-scan-local.txt is gitignored.
+
+<private-project-name>
+<private-hostname>
+<private-username>

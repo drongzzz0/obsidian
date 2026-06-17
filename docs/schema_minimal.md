@@ -89,8 +89,8 @@ Experiment records and outcomes.
 | `status` | enum | `running`, `completed_positive`, `completed_negative`, `failed` |
 | `dataset` | string | Dataset or benchmark |
 | `model` | string | Model or system under test |
-| `seed` | string | Optional seed |
-| `config_ref` | string | Local config reference or hash |
+| `seed` | integer, string, or null | Optional seed |
+| `config_ref` | string or null | Relative config path, content hash, or git ref; never a machine-local absolute path |
 | `metrics_json` | JSON | Parsed metrics |
 | `artifacts_json` | JSON | Output artifacts |
 | `failure_type` | string | Optional failure label |

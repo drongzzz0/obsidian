@@ -10,7 +10,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-
 REQUIRED_TABLES = ["papers", "chunks", "claims", "problem_cases", "experiment_runs"]
 
 
@@ -75,7 +74,9 @@ def scheduled_task_status(check: bool = True) -> dict[str, Any]:
             "last_result=$i.LastTaskResult;"
             "next_run=$i.NextRunTime.ToString('yyyy-MM-dd HH:mm:ss');"
             "missed=$i.NumberOfMissedRuns} | ConvertTo-Json -Compress "
-            "} catch { [pscustomobject]@{checked=$true;exists=$false;error=$_.Exception.Message} | ConvertTo-Json -Compress }"
+            "} catch { "
+            "[pscustomobject]@{checked=$true;exists=$false;error=$_.Exception.Message} "
+            "| ConvertTo-Json -Compress }"
         ),
     ]
     try:
@@ -206,11 +207,25 @@ def experiment_run_stats(conn: sqlite3.Connection) -> dict[str, Any]:
     columns = table_columns(conn, "experiment_runs")
     rows = [dict(row) for row in conn.execute("select * from experiment_runs").fetchall()]
     total = len(rows)
-    with_metrics = sum(1 for row in rows if has_nonempty_value(row, "metrics_json", columns) or has_nonempty_value(row, "metrics", columns))
-    with_logs = sum(1 for row in rows if has_nonempty_value(row, "log_path", columns) or has_nonempty_value(row, "logs", columns))
+    with_metrics = sum(
+        1
+        for row in rows
+        if has_nonempty_value(row, "metrics_json", columns) or has_nonempty_value(row, "metrics", columns)
+    )
+    with_logs = sum(
+        1
+        for row in rows
+        if has_nonempty_value(row, "log_path", columns) or has_nonempty_value(row, "logs", columns)
+    )
     failure_labeled = sum(1 for row in rows if row_is_failure_labeled(row, columns))
-    kv_runs = sum(1 for row in rows if str(row.get("project", "")).lower() == "kv cache reuse") if "project" in columns else 0
-    created_values = [str(row.get("created_at")) for row in rows if row.get("created_at")] if "created_at" in columns else []
+    kv_runs = (
+        sum(1 for row in rows if str(row.get("project", "")).lower() == "kv cache reuse")
+        if "project" in columns
+        else 0
+    )
+    created_values = (
+        [str(row.get("created_at")) for row in rows if row.get("created_at")] if "created_at" in columns else []
+    )
     return {
         "total": total,
         "kv_runs": kv_runs,
@@ -242,7 +257,11 @@ def row_is_failure_labeled(row: dict[str, Any], columns: set[str]) -> bool:
 
 def latest_experiment_runs(conn: sqlite3.Connection, limit: int = 5) -> list[dict[str, Any]]:
     columns = table_columns(conn, "experiment_runs")
-    selected = [col for col in ["run_id", "project", "experiment", "status", "failure_type", "created_at", "log_path"] if col in columns]
+    selected = [
+        col
+        for col in ["run_id", "project", "experiment", "status", "failure_type", "created_at", "log_path"]
+        if col in columns
+    ]
     if not selected:
         return []
     order_clause = " order by created_at desc" if "created_at" in columns else ""
@@ -287,7 +306,11 @@ def readiness_level(
     if not db_exists:
         return "empty"
     if strict:
-        if int(counts.get("claims", 0)) >= 3000 and int(counts.get("problem_cases", 0)) >= 40 and metrics_coverage >= 0.7:
+        if (
+            int(counts.get("claims", 0)) >= 3000
+            and int(counts.get("problem_cases", 0)) >= 40
+            and metrics_coverage >= 0.7
+        ):
             return "mature"
         if int(counts.get("papers", 0)) >= 20 and int(counts.get("chunks", 0)) >= 500 and total_runs >= 5:
             return "usable"
@@ -345,7 +368,10 @@ def print_text_report(report: dict[str, Any]) -> None:
         print(f"skipped={task.get('skipped')} reason={task.get('reason')}")
     else:
         print(
-            "exists={exists} state={state} last_result={last_result} last_run={last_run} next_run={next_run} missed={missed}".format(
+            (
+                "exists={exists} state={state} last_result={last_result} "
+                "last_run={last_run} next_run={next_run} missed={missed}"
+            ).format(
                 **{
                     "exists": task.get("exists"),
                     "state": task.get("state"),
@@ -366,7 +392,11 @@ def print_text_report(report: dict[str, Any]) -> None:
     print("")
     print("[auto harvest log]")
     log = report["auto_harvest_log"]
-    print(f"exists={log.get('exists')} last_recorded={log.get('last_recorded')} last_parse_failed={log.get('last_parse_failed')}")
+    print(
+        f"exists={log.get('exists')} "
+        f"last_recorded={log.get('last_recorded')} "
+        f"last_parse_failed={log.get('last_parse_failed')}"
+    )
     print(f"recent_started={log.get('recent_started')}")
     print(f"recent_finished={log.get('recent_finished')}")
     print("")

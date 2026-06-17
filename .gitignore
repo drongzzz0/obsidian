@@ -29,6 +29,7 @@ auto_ingest/private/
 .env.*
 *.local.json
 *.secret.json
+.public-scan-local.txt
 
 # Machine-specific workflow logs
 docs/project-plan-log.md

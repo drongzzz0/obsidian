@@ -5,9 +5,9 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
-
 SKIP_DIRS = {".git", ".pytest_cache", ".ruff_cache", ".mypy_cache", "__pycache__", ".venv", "tmp", ".runtime"}
 SKIP_SUFFIXES = {".png", ".jpg", ".jpeg", ".gif", ".ico", ".pdf", ".pyc", ".sqlite", ".sqlite3", ".db"}
+LOCAL_DENY_FILE = ".public-scan-local.txt"
 
 
 @dataclass(frozen=True)
@@ -16,59 +16,18 @@ class PatternRule:
     pattern: re.Pattern[str]
 
 
-def joined(*parts: str) -> str:
-    return "".join(parts)
-
-
-PRIVATE_TERMS = [
-    joined("C:", "\\", "Users", "\\", "mq", "l16"),
-    joined("C:/", "Users", "/", "mq", "l16"),
-    joined("D:", "\\", "Research", "KB"),
-    joined("/", "home", "/", "student"),
-    joined("/", "disk", "_n"),
-    joined("student", "_t"),
-    joined("ma", "qian", "li"),
-    joined("mq", "l16"),
-    joined("api", ".", "ma", "qian", "li"),
-    joined("A", "800"),
-    joined("c", "101"),
-]
-
-PRIVATE_WORD_TERMS = [
-    joined("s", "er"),
-]
-
-PRIVATE_ARTIFACT_TERMS = [
-    joined("draft", "kv"),
-    joined("rl", "_hw2"),
-    joined("\u5f3a", "\u5316", "\u5b66", "\u4e60"),
-    joined("bio", "logy"),
-    joined("current", "_inapp"),
-    joined("\u4f5c", "\u4e1a"),
-]
-
-
 GENERIC_PATH_PATTERNS = [
     r"[A-Za-z]:" + re.escape("\\"),
-    re.escape(joined("/", "home", "/")),
-    re.escape(joined("/", "Users", "/")),
+    re.escape("/home/"),
+    re.escape("/Users/"),
 ]
 
 
-def any_literal_pattern(terms: list[str]) -> re.Pattern[str]:
-    return re.compile("|".join(re.escape(term) for term in terms))
-
-
-def any_word_pattern(terms: list[str]) -> re.Pattern[str]:
-    return re.compile("|".join(rf"\b{re.escape(term)}\b" for term in terms))
-
-
-RULES = [
+BASE_RULES = [
     PatternRule(
-        "personal/path/host",
-        re.compile(f"{any_literal_pattern(PRIVATE_TERMS).pattern}|{any_word_pattern(PRIVATE_WORD_TERMS).pattern}"),
+        "absolute path",
+        re.compile("|".join(GENERIC_PATH_PATTERNS)),
     ),
-    PatternRule("generic absolute path", re.compile("|".join(GENERIC_PATH_PATTERNS))),
     PatternRule(
         "concrete secret",
         re.compile(
@@ -77,12 +36,13 @@ RULES = [
             re.IGNORECASE,
         ),
     ),
-    PatternRule("personal artifact traces", any_literal_pattern(PRIVATE_ARTIFACT_TERMS)),
 ]
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Scan public repository files for local paths, secrets, and private traces.")
+    parser = argparse.ArgumentParser(
+        description="Scan public repository files for local paths, secrets, and private traces."
+    )
     parser.add_argument("root", nargs="?", default=".", type=Path)
     args = parser.parse_args()
 
@@ -98,6 +58,7 @@ def main() -> int:
 
 def scan(root: Path) -> list[tuple[str, Path, int, str]]:
     root = root.resolve()
+    rules = [*BASE_RULES, *local_deny_rules(root / LOCAL_DENY_FILE)]
     matches: list[tuple[str, Path, int, str]] = []
     for path in iter_files(root):
         try:
@@ -106,15 +67,39 @@ def scan(root: Path) -> list[tuple[str, Path, int, str]]:
             text = path.read_text(encoding="utf-8", errors="replace")
         rel_path = path.relative_to(root)
         for line_no, line in enumerate(text.splitlines(), start=1):
-            for rule in RULES:
+            for rule in rules:
                 if rule.pattern.search(line):
+                    if is_allowed_internal_rule_definition(rel_path, rule.label, line):
+                        continue
                     matches.append((rule.label, rel_path, line_no, line.strip()))
     return matches
+
+
+def is_allowed_internal_rule_definition(rel_path: Path, label: str, line: str) -> bool:
+    if rel_path.as_posix() != "scripts/public_repo_scan.py" or label != "absolute path":
+        return False
+    return 're.escape("/home/")' in line or 're.escape("/Users/")' in line
+
+
+def local_deny_rules(path: Path) -> list[PatternRule]:
+    if not path.exists():
+        return []
+    terms = []
+    for raw in path.read_text(encoding="utf-8").splitlines():
+        term = raw.strip()
+        if not term or term.startswith("#"):
+            continue
+        terms.append(term)
+    if not terms:
+        return []
+    return [PatternRule("local deny term", re.compile("|".join(re.escape(term) for term in terms), re.IGNORECASE))]
 
 
 def iter_files(root: Path):
     for path in root.rglob("*"):
         if path.is_dir():
+            continue
+        if path.name == LOCAL_DENY_FILE:
             continue
         if path.suffix.lower() in SKIP_SUFFIXES:
             continue

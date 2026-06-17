@@ -4,11 +4,9 @@ import os
 import queue
 import re
 import subprocess
-import sys
 import threading
 import time
 from pathlib import Path
-
 
 DEFAULT_CONFIG = Path.home() / ".cursor" / "mcp.json"
 
@@ -31,7 +29,7 @@ def build_command(command: str, args: list[str]) -> list[str]:
 
 
 def start_readers(proc: subprocess.Popen[bytes], stderr_lines: list[str]):
-    messages: "queue.Queue[dict]" = queue.Queue()
+    messages: queue.Queue[dict] = queue.Queue()
     protocol_errors: list[str] = []
 
     def read_stdout():

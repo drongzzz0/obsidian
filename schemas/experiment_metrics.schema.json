@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.org/researchkb-agent-memory/experiment_metrics.schema.json",
+  "title": "Experiment Metrics",
+  "type": "object",
+  "required": ["project", "experiment", "status", "metrics"],
+  "properties": {
+    "project": { "type": "string", "minLength": 1 },
+    "experiment": { "type": "string", "minLength": 1 },
+    "run_id": { "type": "string" },
+    "status": {
+      "type": "string",
+      "enum": ["running", "completed_positive", "completed_negative", "failed"]
+    },
+    "git_commit": { "type": ["string", "null"] },
+    "config_ref": {
+      "description": "Relative path, content hash, or git ref. Do not store machine-local absolute paths.",
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "string",
+          "not": { "pattern": "^(?:[A-Za-z]:[\\\\/]|/)" }
+        }
+      ]
+    },
+    "dataset": { "type": ["string", "null"] },
+    "model": { "type": ["string", "null"] },
+    "seed": { "type": ["integer", "string", "null"] },
+    "metrics": { "type": "object" },
+    "failure_type": { "type": ["string", "null"] },
+    "decision": {
+      "type": ["string", "null"],
+      "enum": ["continue", "stop", "redesign", "rerun", "unknown", null]
+    },
+    "next_action": { "type": ["string", "null"] },
+    "artifacts": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "safety": { "type": "object" },
+    "notes": { "type": ["string", "null"] }
+  },
+  "additionalProperties": true
+}

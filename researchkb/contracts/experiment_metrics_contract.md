@@ -20,10 +20,10 @@ The preferred artifact is `metrics.json`.
   "run_id": "stable_run_id",
   "status": "running | completed_positive | completed_negative | failed",
   "git_commit": "",
-  "config_path": "",
+  "config_ref": "configs/example.yaml | sha256:... | git:...",
   "dataset": "",
   "model": "",
-  "seed": "",
+  "seed": null,
   "metrics": {},
   "failure_type": "",
   "decision": "continue | stop | redesign | rerun | unknown",
@@ -41,8 +41,10 @@ The preferred artifact is `metrics.json`.
 | `experiment` | yes | Human-readable experiment name |
 | `run_id` | recommended | Stable ID for later comparison |
 | `status` | yes | Run outcome |
+| `config_ref` | recommended | Relative config path, content hash, or git ref; do not store machine-local absolute paths |
 | `dataset` | recommended | Dataset, benchmark, or sample description |
 | `model` | recommended | Model or system under test |
+| `seed` | recommended | `integer`, `string`, or `null` |
 | `metrics` | yes | Parsed metric dictionary |
 | `failure_type` | if failed | Short reusable failure label |
 | `decision` | recommended | `continue`, `stop`, `redesign`, `rerun`, or `unknown` |
@@ -63,6 +65,18 @@ The preferred artifact is `metrics.json`.
 - `redesign`: change the method, setup, or assumption.
 - `rerun`: repeat because evidence is inconclusive or noisy.
 - `unknown`: no decision yet.
+
+## Config References
+
+Use `config_ref` for reproducibility without leaking local paths. Good values include:
+
+| Value type | Example |
+| --- | --- |
+| Relative path | `configs/smoke.yaml` |
+| Content hash | `sha256:0123abcd...` |
+| Git ref | `git:03d3058:configs/smoke.yaml` |
+
+Do not use machine-local absolute paths such as Windows drive paths or Unix home-directory paths.
 
 ## Plain Log Fallback
 

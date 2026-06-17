@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.org/researchkb-agent-memory/evidence_link.schema.json",
+  "title": "Evidence Link",
+  "type": "object",
+  "required": ["evidence_id", "source_type", "source_id"],
+  "properties": {
+    "evidence_id": { "type": "string", "minLength": 1 },
+    "source_type": {
+      "type": "string",
+      "enum": ["paper", "chunk", "claim", "run", "problem_case", "human_note", "code_state"]
+    },
+    "source_id": { "type": "string", "minLength": 1 },
+    "paper_id": { "type": ["string", "null"] },
+    "chunk_id": { "type": ["string", "null"] },
+    "run_id": { "type": ["string", "null"] },
+    "problem_id": { "type": ["string", "null"] },
+    "locator": { "type": ["string", "null"] },
+    "quote_or_snippet": { "type": ["string", "null"] },
+    "confidence": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "maximum": 1
+    }
+  },
+  "additionalProperties": true
+}

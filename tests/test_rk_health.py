@@ -4,7 +4,6 @@ import importlib.util
 import sqlite3
 from pathlib import Path
 
-
 MODULE_PATH = Path(__file__).resolve().parents[1] / "researchkb" / "rk_health.py"
 SPEC = importlib.util.spec_from_file_location("rk_health", MODULE_PATH)
 assert SPEC is not None

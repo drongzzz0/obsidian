@@ -21,6 +21,7 @@ If you do not have a ResearchKB directory yet, run:
 
 ```powershell
 python .\scripts\init_researchkb_workspace.py
+python .\scripts\seed_demo_db.py
 ```
 
 This creates local files under `.runtime/`, which is ignored by git:
@@ -35,6 +36,12 @@ This creates local files under `.runtime/`, which is ignored by git:
         `-- summary.json
 ```
 
+It also creates a synthetic demo database:
+
+```text
+.runtime/researchkb/db/literature.sqlite
+```
+
 If you already have ResearchKB installed, point the bootstrap script at your own directories:
 
 ```powershell
@@ -45,18 +52,21 @@ python .\scripts\init_researchkb_workspace.py --root "<ResearchKBRoot>" --projec
 
 ```powershell
 python .\researchkb\rk_health.py --root .\.runtime\researchkb
+python .\scripts\query_demo.py --root .\.runtime\researchkb latest-runs
+python .\scripts\query_demo.py --root .\.runtime\researchkb failure-cases cache
+python .\scripts\query_demo.py --root .\.runtime\researchkb evidence compatibility
 ```
 
-Expected first result:
+Expected first health result:
 
 ```text
-Level: empty
+Level: smoke
 watch paths: present
-database: missing
-next action: create or point to a ResearchKB database, then harvest one run
+database: present
+latest run: run_example_smoke_001
 ```
 
-This is acceptable. The bootstrap script only creates a safe scaffold and a smoke run. It does not create your full ResearchKB database.
+This confirms that the synthetic demo DB is queryable. It does not contain private papers, private logs, or real experiment results.
 
 ## 4. Harvest The Smoke Run
 

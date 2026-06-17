@@ -10,6 +10,7 @@ This directory describes the portable ResearchKB Agent Memory contracts. It shou
 - [agent_tool_contracts.md](agent_tool_contracts.md): expected tool inputs and outputs for agents.
 - [../researchkb/contracts/experiment_metrics_contract.md](../researchkb/contracts/experiment_metrics_contract.md): generic experiment output contract.
 - [../researchkb/contracts/kv_cache_reuse_metrics_contract.md](../researchkb/contracts/kv_cache_reuse_metrics_contract.md): KV-cache reuse metric and safety extension.
+- [../schemas](../schemas): machine-checkable JSON Schemas for synthetic examples.
 
 ## Examples
 
@@ -23,6 +24,9 @@ See [../examples](../examples) for synthetic records and answer examples:
 ## Bootstrap And CI
 
 - [../scripts/init_researchkb_workspace.py](../scripts/init_researchkb_workspace.py): create the first smoke workspace.
+- [../scripts/seed_demo_db.py](../scripts/seed_demo_db.py): seed a synthetic demo SQLite database.
+- [../scripts/query_demo.py](../scripts/query_demo.py): query latest runs, failure cases, and evidence in the demo DB.
+- [../scripts/validate_examples.py](../scripts/validate_examples.py): validate example JSON files against schemas.
 - [../scripts/public_repo_scan.py](../scripts/public_repo_scan.py): run the same public hygiene scan used by CI.
 - [../.github/workflows/ci.yml](../.github/workflows/ci.yml): compile scripts, run tests, validate example JSON, and scan public files.
 

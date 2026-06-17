@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.org/researchkb-agent-memory/paper.schema.json",
+  "title": "Paper",
+  "type": "object",
+  "required": ["paper_id", "title"],
+  "properties": {
+    "paper_id": { "type": "string", "minLength": 1 },
+    "title": { "type": "string", "minLength": 1 },
+    "authors": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "year": { "type": ["integer", "null"] },
+    "venue": { "type": ["string", "null"] },
+    "doi": { "type": ["string", "null"] },
+    "arxiv_id": { "type": ["string", "null"] },
+    "url": { "type": ["string", "null"] },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "additionalProperties": true
+}

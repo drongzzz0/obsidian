@@ -14,7 +14,8 @@ Use the generic fields first, then add the KV-specific metrics below.
   "status": "completed_positive | completed_negative | failed",
   "dataset": "dataset name and sample count",
   "model": "producer -> consumer",
-  "seed": "",
+  "config_ref": "configs/kv-cache-reuse.yaml | sha256:... | git:...",
+  "seed": null,
   "metrics": {
     "quality_metric": 0.0,
     "quality_retention": 0.0,
@@ -42,6 +43,8 @@ Use the generic fields first, then add the KV-specific metrics below.
 ```
 
 ## KV-Specific Metrics
+
+Use the generic contract's `config_ref` and `seed` rules. `config_ref` must be a relative path, content hash, or git ref, not a machine-local absolute path. `seed` should be `integer`, `string`, or `null`.
 
 | Metric | Description |
 | --- | --- |

@@ -25,8 +25,10 @@ This project is intended to grow from a workflow template into a small, verifiab
 - Add tests for missing databases, missing tables, smoke runs, mature libraries, and metric coverage.
 - Add lightweight CI.
 
-## Phase 5: MCP Integration
+## Phase 5: Read-Only CLI And MCP Server
 
-- Provide a minimal MCP-compatible interface for Codex, Claude Code, Cursor, and similar tools.
+- Provide a read-only CLI for querying runs, failure cases, papers, claims, and evidence.
+- Provide a minimal MCP-compatible read-only server for Codex, Claude Code, Cursor, and similar tools.
+- Keep write operations explicit and separate from evidence lookup.
 - Keep private data local.
 - Make evidence-grounded answers auditable.

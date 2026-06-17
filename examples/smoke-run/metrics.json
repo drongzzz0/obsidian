@@ -3,6 +3,7 @@
   "experiment": "smoke-test",
   "run_id": "run_example_smoke_001",
   "status": "completed_positive",
+  "config_ref": "examples/smoke-run/config.synthetic.json",
   "dataset": "synthetic-repeated-prefix",
   "model": "example-model",
   "seed": 42,
