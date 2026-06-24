@@ -22,8 +22,15 @@ If you do not have a ResearchKB directory yet, run:
 ```powershell
 python .\scripts\init_researchkb_workspace.py
 python .\scripts\standardize_run.py .\.runtime\example-project\runs\smoke-test
-python .\scripts\auto_standardize_runs.py --paths-file .\.runtime\researchkb\config\auto_harvest_paths.txt --project "Smoke Test"
-python .\scripts\seed_demo_db.py
+python .\scripts\seed_demo_db.py --include-run .\.runtime\example-project\runs\smoke-test\run_record.json
+```
+
+Bash equivalent:
+
+```bash
+python scripts/init_researchkb_workspace.py
+python scripts/standardize_run.py .runtime/example-project/runs/smoke-test
+python scripts/seed_demo_db.py --include-run .runtime/example-project/runs/smoke-test/run_record.json
 ```
 
 This creates local files under `.runtime/`, which is ignored by git:
@@ -60,16 +67,25 @@ python .\scripts\query_demo.py --root .\.runtime\researchkb failure-cases cache
 python .\scripts\query_demo.py --root .\.runtime\researchkb evidence compatibility
 ```
 
+Bash equivalent:
+
+```bash
+python researchkb/rk_health.py --root .runtime/researchkb
+python scripts/query_demo.py --root .runtime/researchkb latest-runs
+python scripts/query_demo.py --root .runtime/researchkb failure-cases cache
+python scripts/query_demo.py --root .runtime/researchkb evidence compatibility
+```
+
 Expected first health result:
 
 ```text
 Level: smoke
 watch paths: present
 database: present
-latest run: run_example_smoke_001
+latest run: run_smoke_001
 ```
 
-This confirms that the synthetic demo DB is queryable. It does not contain private papers, private logs, or real experiment results.
+This confirms that the synthetic demo DB is queryable and includes the freshly standardized smoke run. It does not contain private papers, private logs, or real experiment results.
 
 ## 4. Harvest The Smoke Run
 
@@ -184,5 +200,5 @@ Run before pushing:
 
 ```powershell
 python .\scripts\public_repo_scan.py .
-python -m pytest
+python -m pytest -vv --tb=short
 ```

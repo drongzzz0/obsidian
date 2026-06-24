@@ -57,8 +57,7 @@ cd obsidian
 ```powershell
 python .\scripts\init_researchkb_workspace.py
 python .\scripts\standardize_run.py .\.runtime\example-project\runs\smoke-test
-python .\scripts\auto_standardize_runs.py --paths-file .\.runtime\researchkb\config\auto_harvest_paths.txt --project "Smoke Test"
-python .\scripts\seed_demo_db.py
+python .\scripts\seed_demo_db.py --include-run .\.runtime\example-project\runs\smoke-test\run_record.json
 python .\researchkb\rk_health.py --root .\.runtime\researchkb
 python .\scripts\query_demo.py --root .\.runtime\researchkb latest-runs
 ```
@@ -70,8 +69,7 @@ git clone https://github.com/drongzzz0/obsidian.git
 cd obsidian
 python scripts/init_researchkb_workspace.py
 python scripts/standardize_run.py .runtime/example-project/runs/smoke-test
-python scripts/auto_standardize_runs.py --paths-file .runtime/researchkb/config/auto_harvest_paths.txt --project "Smoke Test"
-python scripts/seed_demo_db.py
+python scripts/seed_demo_db.py --include-run .runtime/example-project/runs/smoke-test/run_record.json
 python researchkb/rk_health.py --root .runtime/researchkb
 python scripts/query_demo.py --root .runtime/researchkb latest-runs
 ```
@@ -85,7 +83,7 @@ python scripts/query_demo.py --root .runtime/researchkb latest-runs
 - 标准化后的 `run_record.json`
 - synthetic `.runtime/researchkb/db/literature.sqlite` 数据库
 
-这个公开 demo DB 只包含 synthetic papers、chunks、claims、evidence links、experiment runs 和 failure cases，不是你的真实 ResearchKB。
+这个公开 demo DB 只包含 synthetic papers、chunks、claims、evidence links、experiment runs 和 failure cases。`latest-runs` 查询应该能看到刚标准化出来的 `run_smoke_001` 记录。它不是你的真实 ResearchKB。
 
 demo 跑通后，再接入你自己的私有 ResearchKB：
 
@@ -203,8 +201,11 @@ KV-cache reuse 相关实验见 [researchkb/contracts/kv_cache_reuse_metrics_cont
 |   |-- standardize_run.py
 |   `-- validate_examples.py
 |-- tests/
+|   |-- test_auto_standardize_runs.py
 |   |-- test_init_researchkb_workspace.py
+|   |-- test_quickstart_demo.py
 |   |-- test_public_repo_scan.py
+|   |-- test_standardize_run.py
 |   `-- test_rk_health.py
 |-- .gitignore
 |-- .public-scan-local.example.txt
@@ -220,7 +221,7 @@ KV-cache reuse 相关实验见 [researchkb/contracts/kv_cache_reuse_metrics_cont
 - `researchkb/contracts/kv_cache_reuse_metrics_contract.md`: KV-cache reuse 指标和安全扩展约定。
 - `researchkb/kv_experiment_metrics_contract.md`: 旧链接兼容入口。
 - `scripts/init_researchkb_workspace.py`: 创建本地 smoke workspace，并打印下一步 health/harvest 命令。
-- `scripts/seed_demo_db.py`: 在 `.runtime/researchkb` 下创建完全 synthetic 的 demo SQLite 数据库。
+- `scripts/seed_demo_db.py`: 在 `.runtime/researchkb` 下创建完全 synthetic 的 demo SQLite 数据库，也可以 include 生成出的 `run_record.json`。
 - `scripts/query_demo.py`: 查询 synthetic demo DB。
 - `scripts/standardize_run.py`: 把混合实验输出和 `METRIC key=value` 日志转换成 `run_record.json`。
 - `scripts/auto_standardize_runs.py`: 扫描 watched paths，增量生成缺失或过期的 `run_record.json`。
@@ -276,7 +277,7 @@ git status -sb --ignored
 ## 开发检查
 
 ```powershell
-python -m py_compile .\researchkb\rk_health.py .\scripts\cursor_mcp_smoke.py .\scripts\init_researchkb_workspace.py .\scripts\public_repo_scan.py .\scripts\seed_demo_db.py .\scripts\query_demo.py .\scripts\standardize_run.py .\scripts\validate_examples.py
+python -m py_compile .\researchkb\rk_health.py @((Get-ChildItem .\scripts\*.py).FullName)
 python -m ruff check .
 python -m pytest -vv --tb=short
 python .\scripts\validate_examples.py

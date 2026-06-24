@@ -16,11 +16,21 @@ Contributions are welcome when they keep the project portable, private-by-defaul
 Run:
 
 ```powershell
-python -m py_compile .\researchkb\rk_health.py .\scripts\cursor_mcp_smoke.py
-python -m pytest
-rg -n "sk-|api[_-]?key|auth[_-]?token|password|secret|bearer" .
-rg -n "<your-username>|<private-host>|<private-project-name>" .
-git status -sb --ignored
+python -m py_compile .\researchkb\rk_health.py @((Get-ChildItem .\scripts\*.py).FullName)
+python -m ruff check .
+python -m pytest -vv --tb=short
+python .\scripts\validate_examples.py
+python .\scripts\public_repo_scan.py .
+```
+
+Bash equivalent:
+
+```bash
+python -m py_compile researchkb/rk_health.py scripts/*.py
+python -m ruff check .
+python -m pytest -vv --tb=short
+python scripts/validate_examples.py
+python scripts/public_repo_scan.py .
 ```
 
 Also check that new examples are synthetic and do not include private PDFs, local databases, real experiment logs, personal usernames, hostnames, or absolute paths.
@@ -31,6 +41,7 @@ Also check that new examples are synthetic and do not include private PDFs, loca
 - No API keys, tokens, logs, PDFs, databases, or local paths are committed.
 - README or docs are updated when behavior changes.
 - Helper scripts still compile.
+- Ruff, pytest, schema validation, and public hygiene scan pass.
 - Examples are small and synthetic.
 
 ## Issue Reports

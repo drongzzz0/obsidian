@@ -57,8 +57,7 @@ Create a synthetic demo database and query it:
 ```powershell
 python .\scripts\init_researchkb_workspace.py
 python .\scripts\standardize_run.py .\.runtime\example-project\runs\smoke-test
-python .\scripts\auto_standardize_runs.py --paths-file .\.runtime\researchkb\config\auto_harvest_paths.txt --project "Smoke Test"
-python .\scripts\seed_demo_db.py
+python .\scripts\seed_demo_db.py --include-run .\.runtime\example-project\runs\smoke-test\run_record.json
 python .\researchkb\rk_health.py --root .\.runtime\researchkb
 python .\scripts\query_demo.py --root .\.runtime\researchkb latest-runs
 ```
@@ -70,8 +69,7 @@ git clone https://github.com/drongzzz0/obsidian.git
 cd obsidian
 python scripts/init_researchkb_workspace.py
 python scripts/standardize_run.py .runtime/example-project/runs/smoke-test
-python scripts/auto_standardize_runs.py --paths-file .runtime/researchkb/config/auto_harvest_paths.txt --project "Smoke Test"
-python scripts/seed_demo_db.py
+python scripts/seed_demo_db.py --include-run .runtime/example-project/runs/smoke-test/run_record.json
 python researchkb/rk_health.py --root .runtime/researchkb
 python scripts/query_demo.py --root .runtime/researchkb latest-runs
 ```
@@ -85,7 +83,7 @@ The generated demo creates:
 - a standardized `run_record.json`
 - a synthetic `.runtime/researchkb/db/literature.sqlite` database
 
-The public demo DB contains synthetic papers, chunks, claims, evidence links, experiment runs, and failure cases. It is not your real ResearchKB.
+The public demo DB contains synthetic papers, chunks, claims, evidence links, experiment runs, and failure cases. The `latest-runs` query should include the freshly standardized `run_smoke_001` record. It is not your real ResearchKB.
 
 After the demo works, point the scripts at your private ResearchKB installation:
 
@@ -203,8 +201,11 @@ For KV-cache reuse work, see [researchkb/contracts/kv_cache_reuse_metrics_contra
 |   |-- standardize_run.py
 |   `-- validate_examples.py
 |-- tests/
+|   |-- test_auto_standardize_runs.py
 |   |-- test_init_researchkb_workspace.py
+|   |-- test_quickstart_demo.py
 |   |-- test_public_repo_scan.py
+|   |-- test_standardize_run.py
 |   `-- test_rk_health.py
 |-- .gitignore
 |-- .public-scan-local.example.txt
@@ -220,7 +221,7 @@ For KV-cache reuse work, see [researchkb/contracts/kv_cache_reuse_metrics_contra
 - `researchkb/contracts/kv_cache_reuse_metrics_contract.md`: KV-cache reuse metric and safety extension.
 - `researchkb/kv_experiment_metrics_contract.md`: compatibility pointer for older links.
 - `scripts/init_researchkb_workspace.py`: creates a local smoke workspace and prints the next health/harvest commands.
-- `scripts/seed_demo_db.py`: creates a fully synthetic demo SQLite database under `.runtime/researchkb`.
+- `scripts/seed_demo_db.py`: creates a fully synthetic demo SQLite database under `.runtime/researchkb` and can include a generated `run_record.json`.
 - `scripts/query_demo.py`: queries the synthetic demo DB.
 - `scripts/standardize_run.py`: converts mixed experiment outputs and `METRIC key=value` logs into `run_record.json`.
 - `scripts/auto_standardize_runs.py`: scans watched paths and incrementally writes missing or stale `run_record.json` files.
@@ -276,7 +277,7 @@ git status -sb --ignored
 ## Development Checks
 
 ```powershell
-python -m py_compile .\researchkb\rk_health.py .\scripts\cursor_mcp_smoke.py .\scripts\init_researchkb_workspace.py .\scripts\public_repo_scan.py .\scripts\seed_demo_db.py .\scripts\query_demo.py .\scripts\standardize_run.py .\scripts\validate_examples.py
+python -m py_compile .\researchkb\rk_health.py @((Get-ChildItem .\scripts\*.py).FullName)
 python -m ruff check .
 python -m pytest -vv --tb=short
 python .\scripts\validate_examples.py

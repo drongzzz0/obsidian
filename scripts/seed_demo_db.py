@@ -3,12 +3,12 @@ from __future__ import annotations
 import argparse
 import json
 import sqlite3
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 DEFAULT_ROOT = Path(".runtime") / "researchkb"
 EXAMPLES_DIR = Path("examples")
+DEMO_CREATED_AT = "2026-01-01T00:00:00+00:00"
 
 
 def main() -> int:
@@ -21,14 +21,26 @@ def main() -> int:
     )
     parser.add_argument("--examples", type=Path, default=EXAMPLES_DIR, help="Examples directory.")
     parser.add_argument("--force", action="store_true", help="Overwrite an existing database outside .runtime.")
+    parser.add_argument(
+        "--include-run",
+        action="append",
+        type=Path,
+        default=[],
+        help="Additional run_record.json file to include in experiment_runs. Can be passed more than once.",
+    )
     args = parser.parse_args()
 
-    db_path = seed_demo_db(args.root, args.examples, force=args.force)
+    db_path = seed_demo_db(args.root, args.examples, force=args.force, include_runs=args.include_run)
     print(f"DEMO_DB_OK {db_path}")
     return 0
 
 
-def seed_demo_db(root: Path, examples_dir: Path, force: bool = False) -> Path:
+def seed_demo_db(
+    root: Path,
+    examples_dir: Path,
+    force: bool = False,
+    include_runs: list[Path] | None = None,
+) -> Path:
     root = root.resolve()
     db_path = root / "db" / "literature.sqlite"
     if db_path.exists():
@@ -40,7 +52,7 @@ def seed_demo_db(root: Path, examples_dir: Path, force: bool = False) -> Path:
     conn = sqlite3.connect(db_path)
     try:
         create_tables(conn)
-        seed_records(conn, examples_dir)
+        seed_records(conn, examples_dir, include_runs=include_runs or [])
         conn.commit()
     finally:
         conn.close()
@@ -132,8 +144,8 @@ def create_tables(conn: sqlite3.Connection) -> None:
     )
 
 
-def seed_records(conn: sqlite3.Connection, examples_dir: Path) -> None:
-    created_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
+def seed_records(conn: sqlite3.Connection, examples_dir: Path, include_runs: list[Path]) -> None:
+    created_at = DEMO_CREATED_AT
     paper = read_json(examples_dir / "paper-memory" / "paper.json")
     chunk = read_json(examples_dir / "paper-memory" / "chunk.json")
     claim = read_json(examples_dir / "paper-memory" / "claim.json")
@@ -142,6 +154,8 @@ def seed_records(conn: sqlite3.Connection, examples_dir: Path) -> None:
     standardized_run = examples_dir / "standardized-run" / "run_record.json"
     if standardized_run.exists():
         runs.append(read_json(standardized_run))
+    for run_path in include_runs:
+        runs.append(read_json(run_path))
     problem = read_json(examples_dir / "failure-case" / "problem_case.json")
 
     conn.execute(
@@ -224,7 +238,7 @@ def seed_records(conn: sqlite3.Connection, examples_dir: Path) -> None:
 
 def insert_experiment_run(conn: sqlite3.Connection, run: dict[str, Any], created_at: str) -> None:
     conn.execute(
-        "insert into experiment_runs values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        "insert or replace into experiment_runs values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
         (
             run.get("run_id", "run_smoke_001"),
             run["project"],

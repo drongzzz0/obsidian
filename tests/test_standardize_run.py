@@ -41,6 +41,7 @@ def test_standardize_run_extracts_json_and_metric_lines(tmp_path: Path) -> None:
     record = standardize_run.build_run_record(run_dir)
 
     assert record["project"] == "Example Project"
+    assert record["run_id"] == "run_example_quality_001"
     assert record["status"] == "completed_negative"
     assert record["failure_type"] == "quality_below_threshold"
     assert record["decision"] == "redesign"
@@ -63,3 +64,24 @@ def test_standardize_run_rejects_absolute_config_ref(tmp_path: Path) -> None:
         assert "config_ref" in str(exc)
     else:
         raise AssertionError("absolute config_ref should be rejected")
+
+
+def test_standardize_run_generated_id_ignores_absolute_path(tmp_path: Path) -> None:
+    payload = {
+        "project": "Example Project",
+        "experiment": "same-content-run",
+        "status": "completed_positive",
+        "metrics": {
+            "accuracy": 0.91,
+            "latency_ms": 100.0,
+        },
+    }
+    records = []
+
+    for parent in ["one", "two"]:
+        run_dir = tmp_path / parent / "runs" / "same-content-run"
+        run_dir.mkdir(parents=True)
+        (run_dir / "metrics.json").write_text(json.dumps(payload) + "\n", encoding="utf-8")
+        records.append(standardize_run.build_run_record(run_dir))
+
+    assert records[0]["run_id"] == records[1]["run_id"]

@@ -27,6 +27,8 @@ METADATA_KEYS = {
     "artifacts",
     "safety",
     "notes",
+    "summary",
+    "expected_agent_use",
     "created_at",
 }
 CANONICAL_ALIASES = {
@@ -135,6 +137,10 @@ def build_run_record(
     metrics = add_canonical_metrics(metrics)
     config_ref = first_non_empty(config_ref, metadata.get("config_ref"))
     ensure_public_config_ref(config_ref)
+    project_value = project or metadata.get("project") or infer_project(run_dir)
+    experiment_value = experiment or metadata.get("experiment") or run_dir.name
+    git_commit_value = git_commit or metadata.get("git_commit")
+    source_created_at = first_non_empty(metadata.get("created_at"))
     failure_type = derive_failure_type(
         failure_type,
         metadata.get("failure_type"),
@@ -145,13 +151,22 @@ def build_run_record(
     status = derive_status(status or metadata.get("status"), failure_type, metrics, quality_floor)
     decision = decision or metadata.get("decision") or derive_decision(status)
     next_action = next_action or metadata.get("next_action") or derive_next_action(status, failure_type)
+    run_id_value = first_non_empty(run_id, metadata.get("run_id")) or stable_run_id(
+        run_dir,
+        project=project_value,
+        experiment=experiment_value,
+        created_at=source_created_at,
+        git_commit=git_commit_value,
+        metrics=metrics,
+        artifacts=artifacts,
+    )
 
     return {
-        "project": project or metadata.get("project") or infer_project(run_dir),
-        "experiment": experiment or metadata.get("experiment") or run_dir.name,
-        "run_id": run_id or metadata.get("run_id") or stable_run_id(run_dir),
+        "project": project_value,
+        "experiment": experiment_value,
+        "run_id": run_id_value,
         "status": status,
-        "git_commit": git_commit or metadata.get("git_commit"),
+        "git_commit": git_commit_value,
         "config_ref": config_ref,
         "dataset": dataset or metadata.get("dataset"),
         "model": model or metadata.get("model"),
@@ -161,7 +176,7 @@ def build_run_record(
         "decision": decision,
         "next_action": next_action,
         "artifacts": sorted(set(artifacts)),
-        "created_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "created_at": source_created_at or datetime.now(timezone.utc).isoformat(timespec="seconds"),
     }
 
 
@@ -307,9 +322,48 @@ def infer_project(run_dir: Path) -> str:
     return "Research Project"
 
 
-def stable_run_id(run_dir: Path) -> str:
-    digest = hashlib.sha1(run_dir.as_posix().encode("utf-8")).hexdigest()[:16]
-    return f"run_{digest}"
+def stable_run_id(
+    run_dir: Path,
+    project: str | None = None,
+    experiment: str | None = None,
+    created_at: str | None = None,
+    git_commit: str | None = None,
+    metrics: dict[str, Any] | None = None,
+    artifacts: list[str] | None = None,
+) -> str:
+    if project and experiment and (created_at or git_commit):
+        identity = {
+            "project": project,
+            "experiment": experiment,
+            "created_at": created_at,
+            "git_commit": git_commit,
+        }
+        return f"run_{short_hash(identity)}"
+
+    file_digests = []
+    for path in [*discover_json_files(run_dir), *discover_log_files(run_dir)]:
+        file_digests.append(
+            {
+                "name": path.name,
+                "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+            }
+        )
+
+    payload: dict[str, Any] = {
+        "project": project,
+        "experiment": experiment,
+        "metrics": metrics or {},
+        "artifacts": sorted(set(artifacts or [])),
+        "files": file_digests,
+    }
+    if not file_digests and not metrics:
+        payload["run_dir_name"] = run_dir.name
+    return f"run_{short_hash(payload)}"
+
+
+def short_hash(payload: Any) -> str:
+    text = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha1(text.encode("utf-8")).hexdigest()[:16]
 
 
 def normalize_seed(value: Any) -> int | str | None:

@@ -2,7 +2,10 @@
 
 ## Unreleased
 
-- Nothing yet.
+- Added `seed_demo_db.py --include-run` so the Quick Start demo database can include the freshly standardized smoke run.
+- Made generated `run_id` values independent of machine-local absolute paths.
+- Added an end-to-end Quick Start demo test.
+- Updated contribution checks and Quick Start documentation.
 
 ## v0.1.0 - 2026-06-17
 
