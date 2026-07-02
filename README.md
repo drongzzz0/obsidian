@@ -80,6 +80,20 @@ The generated demo creates:
 
 The public demo DB contains synthetic papers, chunks, claims, evidence links, experiment runs, and failure cases. The `latest-runs` query should include the freshly standardized `run_smoke_001` record. It is not your real ResearchKB.
 
+The local `.runtime` demo is safe to write to. To verify the full importer loop:
+
+```bash
+rk-memory schema-check --root .runtime/researchkb
+rk-memory import-bibtex examples/paper-memory/demo.bib --root .runtime/researchkb --write
+rk-memory import-notes examples/note-memory/synthetic-cache-note.md --root .runtime/researchkb --write
+rk-memory search-papers "Synthetic Failure Memory" --root .runtime/researchkb
+rk-memory search-claims "prompt-template compatibility" --root .runtime/researchkb
+rk-memory search-evidence "incompatible" --root .runtime/researchkb
+```
+
+The same loop works in PowerShell; backslash paths such as `.\examples\paper-memory\demo.bib`
+are also accepted.
+
 After the demo works, point the scripts at your private ResearchKB installation:
 
 ```powershell

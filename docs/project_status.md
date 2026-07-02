@@ -2,7 +2,7 @@
 
 English | [简体中文](project_status.zh-CN.md)
 
-Status as of **2026-07-02**, current release **v0.3.0**.
+Status as of **2026-07-02**, current release **v0.4.0**.
 
 This document is the periodic snapshot of where the project stands and what comes next.
 For per-release detail see [CHANGELOG.md](../CHANGELOG.md); for the long-term phase list see
@@ -55,7 +55,7 @@ Everything runs on SQLite plus the Python standard library; private data never e
 - CI matrix (ubuntu/windows x Python 3.10/3.13) installs the package and smoke-tests the
   CLI on every job.
 
-### Unreleased after v0.3.0: first explicit importers
+### v0.4.0: write-capable importers and schema preflight
 
 - `rk-memory import-runs` previews and imports standardized `run_record.json` files into
   `experiment_runs`.
@@ -64,10 +64,13 @@ Everything runs on SQLite plus the Python standard library; private data never e
 - `rk-memory import-notes` previews and imports curated Markdown notes into `chunks`,
   `claims`, and `evidence_links`.
 - `rk-memory schema-check` verifies required SQLite tables and columns before writes.
-- Both commands are dry-run by default; database writes require explicit `--write`.
+- Import commands are dry-run by default; database writes require explicit `--write`.
 - Run imports upsert by `run_id`; BibTeX imports upsert by stable DOI, arXiv, or BibTeX-key
   derived `paper_id`; note imports upsert by stable `chunk_id`, `claim_id`, and
   `evidence_id`.
+- The full synthetic write demo is now tested end to end: `schema-check`,
+  `import-bibtex --write`, `import-notes --write`, `search-papers`, `search-claims`, and
+  `search-evidence`.
 - The MCP server remains read-only.
 
 ## Current Quality Numbers
@@ -76,7 +79,7 @@ All measured on the synthetic demo database (see caveat below):
 
 | Metric | Value |
 | --- | --- |
-| Tests | 80 passing locally; CI matrix pending for the unreleased importers |
+| Tests | 81 passing locally; GitHub Actions verifies the pushed commit/tag |
 | Retrieval eval | recall@k 1.0, MRR 0.96, precision@1 0.92, guard pass rate 1.0 |
 | Citation validity (good-answer example) | 1.0 |
 | Demo library health | level `smoke`, metrics coverage 1.0, evidence density 1.0 |
@@ -92,32 +95,23 @@ benchmark exists yet; producing one is the goal of the v0.6 milestone.
 - Keyword search only (FTS5 BM25 with LIKE fallback); no semantic/embedding layer by design
   for now.
 - The package installs locally but is not yet published to PyPI.
-- Paper metadata, curated notes, and experiment-run ingestion now have explicit CLI paths,
-  but all require an existing private database and `--write`; `schema-check` catches
-  missing tables or columns before writes.
+- Paper metadata, curated notes, and experiment-run ingestion have explicit CLI paths, but
+  all private database writes still require `--write`; `schema-check` catches missing
+  tables or columns before writes.
 - Full paper/PDF parsing is still planned; the note importer handles curated Markdown only.
 
 ## Plan
 
-### v0.4.0 - real data importers (next up)
-
-- `rk-memory import-runs`: shipped in unreleased form; keep hardening real-project tests.
-- `rk-memory import-bibtex`: shipped in unreleased form; seed `papers` from BibTeX / Zotero
-  exports (metadata only, no PDFs).
-- `rk-memory import-notes`: shipped in unreleased form; turn curated Markdown notes into
-  `chunks` / `claims` / `evidence_links`.
-- `rk-memory schema-check`: shipped in unreleased form; read-only table/column validation.
-- `rk-memory schema init --dry-run`: still planned as explicit, opt-in schema management.
-- Hard rule carried through docs and code: **the MCP server stays read-only; all writes
-  are explicit CLI operations.**
-
-### v0.5.0 - project memory
+### v0.5.0 - project memory (next up)
 
 - New record types: `research_projects` (goal, active hypothesis, constraints),
   `decision_logs` (decision, rationale, evidence IDs, rejected options),
   `open_questions`, and `rejected_ideas`.
 - Session brief v2 that answers "where are we, what was ruled out, what is next".
 - Lightweight Obsidian/Markdown export (human-readable mirror, never the primary store).
+- `rk-memory schema init --dry-run` as explicit, opt-in schema management.
+- Hard rule carried through docs and code: **the MCP server stays read-only; all writes
+  are explicit CLI operations.**
 
 ### v0.6.0 - real-world evaluation
 
@@ -145,9 +139,11 @@ rk-memory init
 rk-memory standardize-run .runtime/example-project/runs/smoke-test
 rk-memory seed-demo --include-run .runtime/example-project/runs/smoke-test/run_record.json
 rk-memory schema-check --root .runtime/researchkb
-rk-memory import-runs .runtime/example-project/runs --root .runtime/researchkb
-rk-memory import-bibtex examples/paper-memory/demo.bib --root .runtime/researchkb
-rk-memory import-notes examples/note-memory/synthetic-cache-note.md --root .runtime/researchkb
+rk-memory import-runs .runtime/example-project/runs --root .runtime/researchkb --write
+rk-memory import-bibtex examples/paper-memory/demo.bib --root .runtime/researchkb --write
+rk-memory import-notes examples/note-memory/synthetic-cache-note.md --root .runtime/researchkb --write
+rk-memory search-claims "prompt-template compatibility" --root .runtime/researchkb
+rk-memory search-evidence "incompatible" --root .runtime/researchkb
 rk-memory eval --root .runtime/researchkb --min-recall 0.9 --min-mrr 0.75
 rk-memory check-citations examples/agent-answers/good_troubleshooting_answer.md --root .runtime/researchkb --min-validity 1.0
 python -m pytest -q

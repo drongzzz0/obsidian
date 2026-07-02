@@ -79,6 +79,19 @@ rk-memory search-evidence "validate compatibility" --root .runtime/researchkb
 
 这个公开 demo DB 只包含 synthetic papers、chunks、claims、evidence links、experiment runs 和 failure cases。`latest-runs` 查询应该能看到刚标准化出来的 `run_smoke_001` 记录。它不是你的真实 ResearchKB。
 
+本地 `.runtime` demo 可以安全写入。用下面命令验证完整 importer 闭环：
+
+```bash
+rk-memory schema-check --root .runtime/researchkb
+rk-memory import-bibtex examples/paper-memory/demo.bib --root .runtime/researchkb --write
+rk-memory import-notes examples/note-memory/synthetic-cache-note.md --root .runtime/researchkb --write
+rk-memory search-papers "Synthetic Failure Memory" --root .runtime/researchkb
+rk-memory search-claims "prompt-template compatibility" --root .runtime/researchkb
+rk-memory search-evidence "incompatible" --root .runtime/researchkb
+```
+
+PowerShell 下也一样可用；也可以写成 `.\examples\paper-memory\demo.bib` 这类反斜杠路径。
+
 demo 跑通后，再接入你自己的私有 ResearchKB：
 
 ```powershell

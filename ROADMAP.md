@@ -48,10 +48,16 @@ This project is intended to grow from a workflow template into a small, verifiab
 
 ## Phase 8: Importers And Distribution
 
-- Import standardized `run_record.json` files into `experiment_runs`. (unreleased: `rk-memory import-runs`)
+- Import standardized `run_record.json` files into `experiment_runs`. (shipped in v0.4.0: `rk-memory import-runs`)
 - Import runs from MLflow file stores and W&B exports into `run_record.json`.
-- Seed paper metadata from Zotero or BibTeX exports. (unreleased: `rk-memory import-bibtex`)
-- Import curated Markdown notes into chunks, claims, and evidence links. (unreleased: `rk-memory import-notes`)
-- Check SQLite table/column readiness before writes. (unreleased: `rk-memory schema-check`)
+- Seed paper metadata from Zotero or BibTeX exports. (shipped in v0.4.0: `rk-memory import-bibtex`)
+- Import curated Markdown notes into chunks, claims, and evidence links. (shipped in v0.4.0: `rk-memory import-notes`)
+- Check SQLite table/column readiness before writes. (shipped in v0.4.0: `rk-memory schema-check`)
 - Publish a pip-installable package with console entry points. (local install shipped in v0.3.0: `pip install -e .` provides `rk-memory`; PyPI publication pending)
 - Register the MCP server in public MCP directories.
+
+## Phase 9: Project Memory
+
+- Add project-level memory records for goals, active hypotheses, constraints, decisions, open questions, and rejected ideas.
+- Extend `session-brief` so agents can answer what changed, what was ruled out, and what the next concrete action is.
+- Add human-readable Markdown/Obsidian export as a mirror of the SQLite source of truth.
