@@ -4,6 +4,7 @@ This directory describes the portable ResearchKB Agent Memory contracts. It shou
 
 ## Core Docs
 
+- [project_status.md](project_status.md): periodic snapshot of progress, quality numbers, and the forward plan ([中文版](project_status.zh-CN.md)).
 - [architecture.md](architecture.md): end-to-end loop and component boundaries.
 - [quickstart.md](quickstart.md): 10-minute first-run loop.
 - [schema_minimal.md](schema_minimal.md): minimal schema for papers, claims, runs, failure cases, and evidence links.

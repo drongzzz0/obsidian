@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Added `docs/project_status.md` and `docs/project_status.zh-CN.md`: periodic progress snapshot with quality numbers, known limitations, and the v0.4-v0.6 plan.
+
 ## v0.3.0 - 2026-07-02
 
 - Added the installable `researchkb_agent_memory` package (`src/` layout) with an `rk-memory` console script: `init`, `seed-demo`, `standardize-run`, `auto-standardize`, `health`, `session-brief`, `search-papers`, `search-chunks`, `search-claims`, `search-evidence`, `find-failure-cases`, `latest-runs`, `compare-runs`, `eval`, `check-citations`, and `mcp`.
