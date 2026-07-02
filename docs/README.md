@@ -36,6 +36,7 @@ See [../examples](../examples) for synthetic records and answer examples:
 
 ## Agent Access And Effectiveness
 
+- [../src/researchkb_agent_memory](../src/researchkb_agent_memory): installable package behind the `rk-memory` CLI (`pip install -e .`).
 - [../researchkb/rk_mcp_server.py](../researchkb/rk_mcp_server.py): read-only MCP server implementing the agent tool contracts.
 - [../researchkb/rk_query.py](../researchkb/rk_query.py): shared read-only query engine (FTS5 with LIKE fallback).
 - [../scripts/session_brief.py](../scripts/session_brief.py): session-start brief with recent runs and open failure cases.

@@ -1,0 +1,2 @@
+[console_scripts]
+rk-memory = researchkb_agent_memory.cli:main

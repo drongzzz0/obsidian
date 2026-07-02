@@ -1,5 +1,13 @@
 # Changelog
 
+## v0.3.0 - 2026-07-02
+
+- Added the installable `researchkb_agent_memory` package (`src/` layout) with an `rk-memory` console script: `init`, `seed-demo`, `standardize-run`, `auto-standardize`, `health`, `session-brief`, `search-papers`, `search-chunks`, `search-claims`, `search-evidence`, `find-failure-cases`, `latest-runs`, `compare-runs`, `eval`, `check-citations`, and `mcp`.
+- Converted `researchkb/*.py` and user-facing `scripts/*.py` into thin compatibility wrappers over the package; both call paths stay behavior-identical and work without installation.
+- Added `[build-system]`, `[project.scripts]`, and src-layout package discovery to `pyproject.toml`, so `pip install -e .` now works.
+- MCP registration can now use `rk-memory mcp --root <Root>` instead of a hardcoded script path.
+- CI installs the package and smoke-tests the `rk-memory` CLI on every matrix job.
+
 ## v0.2.1 - 2026-07-02
 
 - Added `search_evidence` to the MCP server so the core provenance lookup is callable by agents, with tests.

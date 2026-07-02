@@ -1,6 +1,10 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "researchkb-agent-memory"
-version = "0.2.1"
+version = "0.3.0"
 description = "Local-first ResearchKB agent memory workflow templates and diagnostics."
 requires-python = ">=3.10"
 dependencies = [
@@ -13,6 +17,12 @@ dev = [
     "pytest>=8.0",
     "ruff>=0.8",
 ]
+
+[project.scripts]
+rk-memory = "researchkb_agent_memory.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

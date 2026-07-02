@@ -45,34 +45,28 @@ The actual database, PDFs, logs, secrets, and machine-specific config stay outsi
 
 ## Quick Start
 
-### PowerShell
-
-```powershell
-git clone https://github.com/drongzzz0/researchkb-agent-memory.git
-cd researchkb-agent-memory
-```
-
-Create a synthetic demo database and query it:
-
-```powershell
-python .\scripts\init_researchkb_workspace.py
-python .\scripts\standardize_run.py .\.runtime\example-project\runs\smoke-test
-python .\scripts\seed_demo_db.py --include-run .\.runtime\example-project\runs\smoke-test\run_record.json
-python .\researchkb\rk_health.py --root .\.runtime\researchkb
-python .\scripts\query_demo.py --root .\.runtime\researchkb latest-runs
-```
-
-### Bash
+Install the `rk-memory` CLI and run the demo loop (PowerShell or Bash):
 
 ```bash
 git clone https://github.com/drongzzz0/researchkb-agent-memory.git
 cd researchkb-agent-memory
-python scripts/init_researchkb_workspace.py
-python scripts/standardize_run.py .runtime/example-project/runs/smoke-test
-python scripts/seed_demo_db.py --include-run .runtime/example-project/runs/smoke-test/run_record.json
-python researchkb/rk_health.py --root .runtime/researchkb
-python scripts/query_demo.py --root .runtime/researchkb latest-runs
+python -m pip install -e .
+
+rk-memory init
+rk-memory standardize-run .runtime/example-project/runs/smoke-test
+rk-memory seed-demo --include-run .runtime/example-project/runs/smoke-test/run_record.json
+rk-memory health --root .runtime/researchkb
+rk-memory latest-runs --root .runtime/researchkb
+rk-memory search-evidence "validate compatibility" --root .runtime/researchkb
 ```
+
+Run `rk-memory --help` for the full command list (search, failure cases, run comparison,
+eval, citation check, session brief, MCP server).
+
+Prefer not to install? Every command also works as a plain script, e.g.
+`python scripts/init_researchkb_workspace.py`, `python scripts/standardize_run.py <run-dir>`,
+`python scripts/seed_demo_db.py`, `python researchkb/rk_health.py`, and
+`python scripts/query_demo.py --root .runtime/researchkb latest-runs`.
 
 The generated demo creates:
 
@@ -106,18 +100,22 @@ Per-surface coverage lives in [docs/tool_matrix.md](docs/tool_matrix.md); transp
 protocol version, tested clients, and security boundary in
 [docs/mcp_compatibility.md](docs/mcp_compatibility.md).
 
-Register it in Cursor (`~/.cursor/mcp.json`) or Claude Code (`.mcp.json`):
+Register it in Cursor (`~/.cursor/mcp.json`) or Claude Code (`.mcp.json`). With the package
+installed (`python -m pip install -e .`):
 
 ```json
 {
   "mcpServers": {
     "researchkb": {
-      "command": "python",
-      "args": ["<RepoRoot>/researchkb/rk_mcp_server.py", "--root", "<ResearchKBRoot>"]
+      "command": "rk-memory",
+      "args": ["mcp", "--root", "<ResearchKBRoot>"]
     }
   }
 }
 ```
+
+Without installing, point `command` at `python` with
+`args: ["<RepoRoot>/researchkb/rk_mcp_server.py", "--root", "<ResearchKBRoot>"]`.
 
 Every tool result carries `source_type`, `source_id`, `locator`, `snippet`, and `confidence`,
 plus `missing_context` and `warnings`, so agent answers stay auditable. The server never
@@ -126,7 +124,7 @@ writes to the database.
 For a session-start context block (recent runs, open failure cases, next actions):
 
 ```powershell
-python .\scripts\session_brief.py --root "<ResearchKBRoot>"
+rk-memory session-brief --root "<ResearchKBRoot>"
 ```
 
 ## Measuring Effectiveness
@@ -141,7 +139,7 @@ not a feeling:
    should add their own `evals/*.jsonl` (see [evals/README.md](evals/README.md)).
 
 ```powershell
-python .\scripts\eval_retrieval.py --root .\.runtime\researchkb --min-recall 0.9 --min-mrr 0.75
+rk-memory eval --root .\.runtime\researchkb --min-recall 0.9 --min-mrr 0.75
 ```
 
 2. **Library health** (`rk_health.py` judgement.effectiveness): `metrics_coverage`,
@@ -152,7 +150,7 @@ python .\scripts\eval_retrieval.py --root .\.runtime\researchkb --min-recall 0.9
    answer and verifies each against the database, reporting `citation_validity`.
 
 ```powershell
-python .\scripts\check_citations.py answer.md --root "<ResearchKBRoot>" --min-validity 1.0
+rk-memory check-citations answer.md --root "<ResearchKBRoot>" --min-validity 1.0
 ```
 
 ## How This Compares To Similar Tools
@@ -262,6 +260,9 @@ For KV-cache reuse work, see [researchkb/contracts/kv_cache_reuse_metrics_contra
 |   `-- agent-answers/
 |-- launchers/
 |   `-- Claude Code launcher templates
+|-- src/
+|   `-- researchkb_agent_memory/
+|       `-- installable package behind the rk-memory CLI
 |-- researchkb/
 |   |-- contracts/
 |   |   |-- experiment_metrics_contract.md
@@ -294,6 +295,7 @@ For KV-cache reuse work, see [researchkb/contracts/kv_cache_reuse_metrics_contra
 
 ## Included Helpers
 
+- `src/researchkb_agent_memory/`: the installable package behind the `rk-memory` CLI; all helpers below delegate to it.
 - `researchkb/rk_mcp_server.py`: read-only MCP server exposing evidence tools to Codex, Claude Code, and Cursor.
 - `researchkb/rk_query.py`: shared read-only query engine with in-memory FTS5 indexing and LIKE fallback.
 - `researchkb/rk-health.cmd`: checks ResearchKB, watched paths, logs, and recent experiment-memory coverage.

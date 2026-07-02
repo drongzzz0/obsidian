@@ -8,29 +8,26 @@ clone repo -> create smoke run -> health check -> harvest -> ask an agent
 
 The goal is not to configure a full literature database on day one. The goal is to prove that one experiment result can become searchable memory.
 
-## 1. Clone
+## 1. Clone And Install
 
 ```powershell
 git clone https://github.com/drongzzz0/researchkb-agent-memory.git
 cd researchkb-agent-memory
+python -m pip install -e .
 ```
+
+Installing gives you the `rk-memory` CLI. Every step below also works without installing by
+substituting the equivalent script (for example `python scripts/init_researchkb_workspace.py`
+instead of `rk-memory init`).
 
 ## 2. Create A Smoke Workspace
 
-If you do not have a ResearchKB directory yet, run:
-
-```powershell
-python .\scripts\init_researchkb_workspace.py
-python .\scripts\standardize_run.py .\.runtime\example-project\runs\smoke-test
-python .\scripts\seed_demo_db.py --include-run .\.runtime\example-project\runs\smoke-test\run_record.json
-```
-
-Bash equivalent:
+If you do not have a ResearchKB directory yet, run (PowerShell or Bash):
 
 ```bash
-python scripts/init_researchkb_workspace.py
-python scripts/standardize_run.py .runtime/example-project/runs/smoke-test
-python scripts/seed_demo_db.py --include-run .runtime/example-project/runs/smoke-test/run_record.json
+rk-memory init
+rk-memory standardize-run .runtime/example-project/runs/smoke-test
+rk-memory seed-demo --include-run .runtime/example-project/runs/smoke-test/run_record.json
 ```
 
 This creates local files under `.runtime/`, which is ignored by git:
@@ -52,28 +49,19 @@ It also creates a synthetic demo database:
 .runtime/researchkb/db/literature.sqlite
 ```
 
-If you already have ResearchKB installed, point the bootstrap script at your own directories:
+If you already have ResearchKB installed, point the bootstrap at your own directories:
 
 ```powershell
-python .\scripts\init_researchkb_workspace.py --root "<ResearchKBRoot>" --project-root "<ProjectRoot>"
+rk-memory init --root "<ResearchKBRoot>" --project-root "<ProjectRoot>"
 ```
 
 ## 3. Run The Health Check
 
-```powershell
-python .\researchkb\rk_health.py --root .\.runtime\researchkb
-python .\scripts\query_demo.py --root .\.runtime\researchkb latest-runs
-python .\scripts\query_demo.py --root .\.runtime\researchkb failure-cases cache
-python .\scripts\query_demo.py --root .\.runtime\researchkb evidence compatibility
-```
-
-Bash equivalent:
-
 ```bash
-python researchkb/rk_health.py --root .runtime/researchkb
-python scripts/query_demo.py --root .runtime/researchkb latest-runs
-python scripts/query_demo.py --root .runtime/researchkb failure-cases cache
-python scripts/query_demo.py --root .runtime/researchkb evidence compatibility
+rk-memory health --root .runtime/researchkb
+rk-memory latest-runs --root .runtime/researchkb
+rk-memory find-failure-cases "cache" --root .runtime/researchkb
+rk-memory search-evidence "compatibility" --root .runtime/researchkb
 ```
 
 Expected first health result:
@@ -92,7 +80,7 @@ This confirms that the synthetic demo DB is queryable and includes the freshly s
 If your run output is already clean `metrics.json`, you can harvest it directly. If it is a mixed output folder with `results.json`, `summary.json`, `eval_results.json`, or logs containing `METRIC key=value`, standardize it first:
 
 ```powershell
-python .\scripts\standardize_run.py "<ProjectRoot>\runs\<run-id>"
+rk-memory standardize-run "<ProjectRoot>\runs\<run-id>"
 ```
 
 This writes:
@@ -106,16 +94,10 @@ Use `run_record.json` as the normalized artifact for ResearchKB ingestion.
 For unattended local use, standardize every watched folder before harvesting:
 
 ```powershell
-python .\scripts\auto_standardize_runs.py --paths-file "<ResearchKBRoot>\config\auto_harvest_paths.txt" --project "<ProjectName>"
+rk-memory auto-standardize --paths-file "<ResearchKBRoot>\config\auto_harvest_paths.txt" --project "<ProjectName>"
 ```
 
 The command scans recent run folders, writes missing or stale `run_record.json` files, and skips fresh folders. Put it before your ResearchKB harvest command in a scheduled task, cron job, or experiment wrapper.
-
-Bash equivalent:
-
-```bash
-python scripts/auto_standardize_runs.py --paths-file "<ResearchKBRoot>/config/auto_harvest_paths.txt" --project "<ProjectName>"
-```
 
 If your ResearchKB installation provides `rk-harvest.cmd`, run the command printed by the bootstrap script. It has this shape:
 
@@ -153,12 +135,15 @@ Register the read-only MCP server in Cursor (`~/.cursor/mcp.json`) or Claude Cod
 {
   "mcpServers": {
     "researchkb": {
-      "command": "python",
-      "args": ["<RepoRoot>/researchkb/rk_mcp_server.py", "--root", "<ResearchKBRoot>"]
+      "command": "rk-memory",
+      "args": ["mcp", "--root", "<ResearchKBRoot>"]
     }
   }
 }
 ```
+
+Without installing the package, use `"command": "python"` with
+`"args": ["<RepoRoot>/researchkb/rk_mcp_server.py", "--root", "<ResearchKBRoot>"]`.
 
 For the demo, point `--root` at `<RepoRoot>/.runtime/researchkb`. The agent gets
 `search_papers`, `search_chunks`, `search_claims`, `search_evidence`, `find_failure_cases`,
@@ -167,18 +152,10 @@ compatibility details: [tool_matrix.md](tool_matrix.md), [mcp_compatibility.md](
 
 Verify retrieval quality and grounding with the built-in metrics:
 
-```powershell
-python .\scripts\eval_retrieval.py --root .\.runtime\researchkb --min-recall 0.9 --min-mrr 0.75
-python .\scripts\check_citations.py .\examples\agent-answers\good_troubleshooting_answer.md --root .\.runtime\researchkb
-python .\scripts\session_brief.py --root .\.runtime\researchkb
-```
-
-Bash equivalent:
-
 ```bash
-python scripts/eval_retrieval.py --root .runtime/researchkb --min-recall 0.9 --min-mrr 0.75
-python scripts/check_citations.py examples/agent-answers/good_troubleshooting_answer.md --root .runtime/researchkb
-python scripts/session_brief.py --root .runtime/researchkb
+rk-memory eval --root .runtime/researchkb --min-recall 0.9 --min-mrr 0.75
+rk-memory check-citations examples/agent-answers/good_troubleshooting_answer.md --root .runtime/researchkb
+rk-memory session-brief --root .runtime/researchkb
 ```
 
 ## 6. Ask An Agent
