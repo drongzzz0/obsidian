@@ -177,16 +177,26 @@ def looks_like_run_dir(path: Path) -> bool:
 
 def source_files(path: Path) -> list[Path]:
     files: list[Path] = []
-    for name in JSON_CANDIDATES:
-        candidate = path / name
-        if candidate.is_file():
-            files.append(candidate)
-    files.extend(sorted(item for item in path.iterdir() if item.is_file() and item.name.endswith(LOG_SUFFIXES)))
+    try:
+        for name in JSON_CANDIDATES:
+            candidate = path / name
+            if candidate.is_file():
+                files.append(candidate)
+        files.extend(sorted(item for item in path.iterdir() if item.is_file() and item.name.endswith(LOG_SUFFIXES)))
+    except OSError:
+        # Unattended scans must survive unreadable directories; treat them as
+        # having no extra parseable sources instead of aborting the whole batch.
+        pass
     return files
 
 
 def newest_source_mtime(path: Path) -> float | None:
-    mtimes = [source.stat().st_mtime for source in source_files(path)]
+    mtimes: list[float] = []
+    for source in source_files(path):
+        try:
+            mtimes.append(source.stat().st_mtime)
+        except OSError:
+            continue
     return max(mtimes) if mtimes else None
 
 

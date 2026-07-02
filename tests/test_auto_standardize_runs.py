@@ -5,6 +5,8 @@ import json
 import sys
 from pathlib import Path
 
+import pytest
+
 SCRIPTS_DIR = Path(__file__).resolve().parents[1] / "scripts"
 MODULE_PATH = SCRIPTS_DIR / "auto_standardize_runs.py"
 sys.path.insert(0, str(SCRIPTS_DIR))
@@ -78,3 +80,28 @@ def test_auto_standardize_dry_run_does_not_write(tmp_path: Path) -> None:
 
     assert report["written"] == 1
     assert not (run_dir / "run_record.json").exists()
+
+
+def test_auto_standardize_survives_unreadable_directories(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    runs_root = tmp_path / "project" / "runs"
+    good_dir = runs_root / "run-good"
+    write_metrics(good_dir, retention=1.0)
+    blocked_dir = runs_root / "run-blocked"
+    blocked_dir.mkdir(parents=True)
+    (blocked_dir / "run.metrics.txt").write_text("METRIC accuracy=0.9\n", encoding="utf-8")
+
+    real_iterdir = Path.iterdir
+
+    def guarded_iterdir(self: Path):
+        if self.name == blocked_dir.name:
+            raise PermissionError(f"simulated unreadable directory: {self}")
+        return real_iterdir(self)
+
+    monkeypatch.setattr(Path, "iterdir", guarded_iterdir)
+
+    report = auto_standardize_runs.auto_standardize(paths=[runs_root], project="Demo Project")
+
+    assert report["failed"] == 0
+    assert report["written"] == 1
+    assert (good_dir / "run_record.json").exists()
+    assert not (blocked_dir / "run_record.json").exists()

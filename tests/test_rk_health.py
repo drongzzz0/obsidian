@@ -92,7 +92,31 @@ def test_health_mature_level_in_strict_mode(tmp_path: Path) -> None:
     report = rk_health.build_report(root=tmp_path, strict=True, check_scheduled=False)
 
     assert report["judgement"]["level"] == "mature"
+    assert report["judgement"]["usable"] is True
     assert report["judgement"]["metrics_coverage"] == 1.0
+
+
+def test_health_strict_mode_requires_mature_before_usable(tmp_path: Path) -> None:
+    conn = make_db(tmp_path)
+    conn.execute("create table papers(paper_id text)")
+    conn.execute("create table chunks(chunk_id text)")
+    conn.execute("create table experiment_runs(run_id text, metrics_json text, created_at text)")
+    conn.executemany("insert into papers values (?)", [(f"paper_{i}",) for i in range(20)])
+    conn.executemany("insert into chunks values (?)", [(f"chunk_{i}",) for i in range(500)])
+    conn.executemany(
+        "insert into experiment_runs values (?, ?, ?)",
+        [(f"run_{i}", '{"accuracy": 0.9}', f"2026-01-0{i + 1}T00:00:00") for i in range(5)],
+    )
+    conn.commit()
+    conn.close()
+
+    default_report = rk_health.build_report(root=tmp_path, check_scheduled=False)
+    strict_report = rk_health.build_report(root=tmp_path, strict=True, check_scheduled=False)
+
+    assert default_report["judgement"]["level"] == "usable"
+    assert default_report["judgement"]["usable"] is True
+    assert strict_report["judgement"]["level"] == "usable"
+    assert strict_report["judgement"]["usable"] is False
 
 
 def test_watch_paths_with_comments(tmp_path: Path) -> None:

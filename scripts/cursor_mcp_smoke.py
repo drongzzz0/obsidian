@@ -19,6 +19,16 @@ def resolve_string(value: str, inputs: dict[str, str]) -> str:
     return re.sub(r"\$\{input:([^}]+)\}", repl, value)
 
 
+def mask_inputs(text: str, inputs: dict[str, str]) -> str:
+    # Substituted input values (e.g. a GitHub PAT) must never appear in printed
+    # or saved reports, so turn them back into their placeholder form.
+    masked = text
+    for key, value in inputs.items():
+        if value:
+            masked = masked.replace(value, f"${{input:{key}}}")
+    return masked
+
+
 def build_command(command: str, args: list[str]) -> list[str]:
     lower = command.lower()
     if lower.endswith(".cmd") or lower.endswith(".bat"):
@@ -123,7 +133,7 @@ def smoke_server(name: str, spec: dict, inputs: dict[str, str], timeout_s: float
 
     result = {
         "name": name,
-        "command": cmd,
+        "command": [mask_inputs(part, inputs) for part in cmd],
         "initialize_ok": False,
         "tools_list_ok": False,
         "tool_count": None,
@@ -166,9 +176,9 @@ def smoke_server(name: str, spec: dict, inputs: dict[str, str], timeout_s: float
         result["tools_list_ok"] = True
         result["tool_count"] = len(tools)
     except Exception as exc:  # noqa: BLE001
-        result["error"] = str(exc)
+        result["error"] = mask_inputs(str(exc), inputs)
     finally:
-        result["stderr_tail"] = stderr_lines[-20:]
+        result["stderr_tail"] = [mask_inputs(line, inputs) for line in stderr_lines[-20:]]
         result["duration_s"] = round(time.time() - started, 3)
         try:
             proc.terminate()

@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Masked substituted input values such as GitHub PATs in `cursor_mcp_smoke.py` command, error, and stderr output, and added tests for the script.
+- Made `rk_health.py --strict` meaningful: strict mode now requires the `mature` readiness level before reporting the library as usable.
+- Made `auto_standardize_runs.py` tolerate unreadable directories and vanished files during unattended scans.
+- Removed the unreferenced legacy README workflow image to shrink clone size.
 - Added `seed_demo_db.py --include-run` so the Quick Start demo database can include the freshly standardized smoke run.
 - Made generated `run_id` values independent of machine-local absolute paths.
 - Added an end-to-end Quick Start demo test.

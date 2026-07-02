@@ -17,7 +17,11 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Report ResearchKB workflow health.")
     parser.add_argument("--json", action="store_true", help="Emit machine-readable JSON.")
     parser.add_argument("--root", type=Path, help="ResearchKB root directory. Overrides RESEARCHKB_ROOT.")
-    parser.add_argument("--strict", action="store_true", help="Use mature-library thresholds for readiness judgement.")
+    parser.add_argument(
+        "--strict",
+        action="store_true",
+        help="Require the mature readiness level before reporting the library as usable.",
+    )
     args = parser.parse_args()
 
     report = build_report(root=resolve_root(args.root), strict=args.strict)
@@ -277,14 +281,15 @@ def judge(report: dict[str, Any], strict: bool = False) -> dict[str, Any]:
     with_metrics = int(run_stats.get("with_metrics") or 0)
     metrics_coverage = (with_metrics / total_runs) if total_runs else 0.0
     existing_watch_paths = sum(1 for item in report["watch_paths"] if item.get("exists"))
-    level = readiness_level(counts, total_runs, with_metrics, metrics_coverage, db.get("exists", False), strict)
+    level = readiness_level(counts, total_runs, with_metrics, metrics_coverage, db.get("exists", False))
+    usable_levels = ("mature",) if strict else ("usable", "mature")
     can_query_runs = total_runs > 0
     can_query_papers = int(counts.get("papers", 0)) > 0 and int(counts.get("chunks", 0)) > 0
     can_query_failure_cases = int(counts.get("problem_cases", 0)) > 0
     next_actions = next_actions_for(level, db, counts, total_runs, with_metrics, existing_watch_paths, metrics_coverage)
     return {
         "level": level,
-        "usable": level in ("usable", "mature"),
+        "usable": level in usable_levels,
         "can_query_runs": can_query_runs,
         "can_query_papers": can_query_papers,
         "can_query_failure_cases": can_query_failure_cases,
@@ -301,21 +306,8 @@ def readiness_level(
     with_metrics: int,
     metrics_coverage: float,
     db_exists: bool,
-    strict: bool,
 ) -> str:
     if not db_exists:
-        return "empty"
-    if strict:
-        if (
-            int(counts.get("claims", 0)) >= 3000
-            and int(counts.get("problem_cases", 0)) >= 40
-            and metrics_coverage >= 0.7
-        ):
-            return "mature"
-        if int(counts.get("papers", 0)) >= 20 and int(counts.get("chunks", 0)) >= 500 and total_runs >= 5:
-            return "usable"
-        if total_runs >= 1 and with_metrics >= 1:
-            return "smoke"
         return "empty"
     if int(counts.get("claims", 0)) >= 3000 and int(counts.get("problem_cases", 0)) >= 40 and metrics_coverage >= 0.7:
         return "mature"
