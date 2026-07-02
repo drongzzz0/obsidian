@@ -92,6 +92,21 @@ def _compare_runs(argv: list[str]) -> int:
     return 0
 
 
+def _project_status(argv: list[str]) -> int:
+    parser = argparse.ArgumentParser(
+        prog="rk-memory project-status",
+        description="Show project goals, decisions, open questions, and rejected ideas (read-only).",
+    )
+    parser.add_argument("--root", type=Path, default=DEFAULT_ROOT, help="ResearchKB root.")
+    parser.add_argument("--project", help="Optional project_id or project name filter.")
+    parser.add_argument("--limit", type=int, default=5)
+    args = parser.parse_args(argv)
+    with QueryEngine(args.root) as engine:
+        result = engine.project_status(project=args.project, limit=args.limit)
+    print(json.dumps(result, ensure_ascii=False, indent=2))
+    return 0
+
+
 COMMANDS: dict[str, tuple[Callable[[list[str]], int], str]] = {
     "init": (workspace.main, "Initialize a local smoke workspace and watch list."),
     "seed-demo": (demo.main, "Create the synthetic demo database from examples/."),
@@ -110,6 +125,7 @@ COMMANDS: dict[str, tuple[Callable[[list[str]], int], str]] = {
     "find-failure-cases": (_query_command("find-failure-cases"), "Search historical failure cases."),
     "latest-runs": (_latest_runs, "Show recent experiment runs."),
     "compare-runs": (_compare_runs, "Compare metrics between two runs."),
+    "project-status": (_project_status, "Show project goals, decisions, questions, and rejected ideas."),
     "eval": (retrieval_eval.main, "Run the retrieval-quality eval against a gold set."),
     "check-citations": (citations.main, "Verify source IDs cited in an answer file."),
     "mcp": (mcp.main, "Start the read-only MCP stdio server."),

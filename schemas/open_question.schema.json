@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.org/researchkb/open_question.schema.json",
+  "title": "Open Question",
+  "type": "object",
+  "required": ["question_id", "project_id", "question", "status"],
+  "additionalProperties": false,
+  "properties": {
+    "question_id": {"type": "string", "minLength": 1},
+    "project_id": {"type": "string", "minLength": 1},
+    "question": {"type": "string", "minLength": 1},
+    "priority": {"type": "string", "enum": ["low", "medium", "high", "critical"]},
+    "status": {"type": "string", "enum": ["open", "answered", "dropped"]},
+    "evidence_ids": {"type": "array", "items": {"type": "string"}},
+    "next_action": {"type": "string"},
+    "created_at": {"type": "string"}
+  }
+}

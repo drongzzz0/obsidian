@@ -126,6 +126,12 @@ def test_end_to_end_workflow(tmp_path: Path, capsys: pytest.CaptureFixture[str])
     assert code == 0
     assert json.loads(out)["level"] == "smoke"
 
+    code, out = run_cli(capsys, "project-status", "--root", str(root))
+    assert code == 0
+    project_status = json.loads(out)
+    assert project_status["projects"][0]["project_id"] == "project_kv_cache_reuse_demo"
+    assert project_status["rejected_ideas"][0]["idea_id"] == "idea_kv_cache_reuse_demo_001"
+
     code, out = run_cli(capsys, "import-runs", str(run_dir / "run_record.json"), "--root", str(root))
     assert code == 0
     assert json.loads(out)["would_update"] == 1

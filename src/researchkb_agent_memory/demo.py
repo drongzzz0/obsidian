@@ -176,6 +176,51 @@ def create_tables(conn: sqlite3.Connection) -> None:
             confidence real,
             created_at text
         );
+
+        create table research_projects(
+            project_id text primary key,
+            name text not null,
+            goal text not null,
+            active_hypothesis text,
+            constraints_json text,
+            status text,
+            tags_json text,
+            created_at text,
+            updated_at text
+        );
+
+        create table decision_logs(
+            decision_id text primary key,
+            project_id text not null,
+            decision text not null,
+            rationale text,
+            evidence_ids_json text,
+            rejected_options_json text,
+            next_action text,
+            created_at text,
+            created_by text
+        );
+
+        create table open_questions(
+            question_id text primary key,
+            project_id text not null,
+            question text not null,
+            priority text,
+            status text,
+            evidence_ids_json text,
+            next_action text,
+            created_at text
+        );
+
+        create table rejected_ideas(
+            idea_id text primary key,
+            project_id text not null,
+            idea text not null,
+            reason text,
+            evidence_ids_json text,
+            reusable_parts_json text,
+            created_at text
+        );
         """
     )
 
@@ -193,6 +238,10 @@ def seed_records(conn: sqlite3.Connection, examples_dir: Path, include_runs: lis
     for run_path in include_runs:
         runs.append(read_json(run_path))
     problem = read_json(examples_dir / "failure-case" / "problem_case.json")
+    project = read_json(examples_dir / "project-memory" / "research_project.json")
+    decision = read_json(examples_dir / "project-memory" / "decision_log.json")
+    question = read_json(examples_dir / "project-memory" / "open_question.json")
+    rejected_idea = read_json(examples_dir / "project-memory" / "rejected_idea.json")
 
     conn.execute(
         """
@@ -268,6 +317,59 @@ def seed_records(conn: sqlite3.Connection, examples_dir: Path, include_runs: lis
             dumps(problem.get("linked_papers", [])),
             problem.get("confidence"),
             created_at,
+        ),
+    )
+    conn.execute(
+        "insert into research_projects values (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (
+            project["project_id"],
+            project["name"],
+            project["goal"],
+            project.get("active_hypothesis"),
+            dumps(project.get("constraints", {})),
+            project.get("status"),
+            dumps(project.get("tags", [])),
+            project.get("created_at", created_at),
+            project.get("updated_at", created_at),
+        ),
+    )
+    conn.execute(
+        "insert into decision_logs values (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        (
+            decision["decision_id"],
+            decision["project_id"],
+            decision["decision"],
+            decision.get("rationale"),
+            dumps(decision.get("evidence_ids", [])),
+            dumps(decision.get("rejected_options", [])),
+            decision.get("next_action"),
+            decision.get("created_at", created_at),
+            decision.get("created_by"),
+        ),
+    )
+    conn.execute(
+        "insert into open_questions values (?, ?, ?, ?, ?, ?, ?, ?)",
+        (
+            question["question_id"],
+            question["project_id"],
+            question["question"],
+            question.get("priority"),
+            question.get("status"),
+            dumps(question.get("evidence_ids", [])),
+            question.get("next_action"),
+            question.get("created_at", created_at),
+        ),
+    )
+    conn.execute(
+        "insert into rejected_ideas values (?, ?, ?, ?, ?, ?, ?)",
+        (
+            rejected_idea["idea_id"],
+            rejected_idea["project_id"],
+            rejected_idea["idea"],
+            rejected_idea.get("reason"),
+            dumps(rejected_idea.get("evidence_ids", [])),
+            dumps(rejected_idea.get("reusable_parts", [])),
+            rejected_idea.get("created_at", created_at),
         ),
     )
 

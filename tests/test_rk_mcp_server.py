@@ -61,6 +61,7 @@ def test_initialize_and_tools_list(demo_root: Path) -> None:
         "find_failure_cases",
         "find_recent_runs",
         "compare_runs",
+        "get_project_status",
         "get_health",
     ]
 
@@ -79,10 +80,13 @@ def test_tool_calls_return_contract_payloads(demo_root: Path) -> None:
         call(server, "tools/call", {"name": "find_failure_cases", "arguments": {"symptom": "cache reuse quality"}})
     )
     runs = tool_payload(call(server, "tools/call", {"name": "find_recent_runs", "arguments": {"limit": 2}}))
+    project = tool_payload(call(server, "tools/call", {"name": "get_project_status", "arguments": {}}))
     health = tool_payload(call(server, "tools/call", {"name": "get_health", "arguments": {}}))
 
     assert cases["cases"][0]["problem_id"] == "problem_example_cache_template_mismatch"
     assert len(runs["runs"]) == 2
+    assert project["projects"][0]["project_id"] == "project_kv_cache_reuse_demo"
+    assert project["open_questions"][0]["question_id"] == "question_kv_cache_reuse_demo_001"
     assert "effectiveness" in health["judgement"]
 
 

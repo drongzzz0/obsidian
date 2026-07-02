@@ -38,6 +38,8 @@ def test_brief_contains_runs_and_effectiveness(tmp_path: Path) -> None:
     assert brief["effectiveness"]["metrics_coverage"] == 1.0
     assert brief["effectiveness"]["failure_documentation_rate"] == 1.0
     assert brief["open_failure_cases"] == []
+    assert brief["project_memory"]["projects"][0]["project_id"] == "project_kv_cache_reuse_demo"
+    assert brief["project_memory"]["recent_decisions"][0]["decision_id"] == "decision_kv_cache_reuse_demo_001"
 
 
 def test_brief_lists_open_failure_cases(tmp_path: Path) -> None:
@@ -64,3 +66,4 @@ def test_brief_for_missing_database(tmp_path: Path) -> None:
     assert brief["level"] == "empty"
     assert brief["recent_runs"] == []
     assert brief["open_failure_cases"] == []
+    assert brief["project_memory"]["projects"] == []

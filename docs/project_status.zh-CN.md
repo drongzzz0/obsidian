@@ -65,13 +65,23 @@
   `import-notes --write`、`search-papers`、`search-claims`、`search-evidence`。
 - MCP server 仍然保持只读。
 
+### v0.4.0 之后的未发布进展：项目记忆只读链路
+
+- 新增 synthetic 项目记忆表和示例：`research_projects`、`decision_logs`、
+  `open_questions`、`rejected_ideas`。
+- 新增 `rk-memory project-status` 和 MCP `get_project_status`，只读查询项目目标、当前假设、
+  最近决策、开放问题、被否 idea。
+- `session-brief` 现在会包含项目记忆，让新会话能恢复"在做什么、已决定什么、还卡什么、
+  哪些方向已经否掉"。
+- 私有写入仍保持显式 CLI；project-memory importer/editor 是下一步。
+
 ## 当前质量数据
 
 均在合成演示库上测得（注意下方限定）：
 
 | 指标 | 数值 |
 | --- | --- |
-| 测试 | 本地 81 个全过；GitHub Actions 会验证推送后的 commit/tag |
+| 测试 | 本地 82 个全过；GitHub Actions 会验证推送后的 commit |
 | 检索评测 | recall@k 1.0、MRR 0.96、precision@1 0.92、防误报通过率 1.0 |
 | 引用有效率（好答案示例） | 1.0 |
 | 演示库健康 | level `smoke`、指标覆盖率 1.0、证据密度 1.0 |
@@ -94,9 +104,9 @@
 
 ### v0.5.0：项目级记忆（下一步）
 
-- 新记录类型：`research_projects`（目标、当前假设、约束）、`decision_logs`
-  （决策、理由、证据 ID、被否选项）、`open_questions`、`rejected_ideas`。
-- 会话简报 v2：回答"做到哪了、什么被否了、下一步是什么"。
+- 新记录类型和只读查询链路：未发布版本已实现；下一步继续加固测试和文档。
+- 增加显式写入型 CLI importer/editor，用于项目记忆记录。
+- 会话简报 v2：回答"做到哪了、什么被否了、下一步是什么"；未发布版本已实现，下一步补真实项目示例。
 - 轻量 Obsidian/Markdown 导出（人读镜像，绝不作为主数据库）。
 - `rk-memory schema init --dry-run`：显式、可选的 schema 管理。
 - 贯穿文档和代码的硬规则：**MCP server 保持只读；所有写操作都是显式 CLI 命令。**

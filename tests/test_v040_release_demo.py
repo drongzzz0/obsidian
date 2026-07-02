@@ -34,6 +34,7 @@ def test_v040_write_demo_loop_makes_imported_evidence_queryable(
         "import-runs": True,
         "import-bibtex": True,
         "import-notes": True,
+        "project-memory": True,
     }
 
     code, out = run_cli(

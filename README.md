@@ -57,12 +57,13 @@ rk-memory standardize-run .runtime/example-project/runs/smoke-test
 rk-memory seed-demo --include-run .runtime/example-project/runs/smoke-test/run_record.json
 rk-memory health --root .runtime/researchkb
 rk-memory latest-runs --root .runtime/researchkb
+rk-memory project-status --root .runtime/researchkb
 rk-memory search-evidence "validate compatibility" --root .runtime/researchkb
 ```
 
 Run `rk-memory --help` for the full command list (run import, BibTeX metadata import,
 Markdown note import, search, failure cases, run comparison, eval, citation check,
-schema check, session brief, MCP server).
+schema check, project status, session brief, MCP server).
 
 Prefer not to install? Every command also works as a plain script, e.g.
 `python scripts/init_researchkb_workspace.py`, `python scripts/standardize_run.py <run-dir>`,
@@ -78,7 +79,7 @@ The generated demo creates:
 - a standardized `run_record.json`
 - a synthetic `.runtime/researchkb/db/literature.sqlite` database
 
-The public demo DB contains synthetic papers, chunks, claims, evidence links, experiment runs, and failure cases. The `latest-runs` query should include the freshly standardized `run_smoke_001` record. It is not your real ResearchKB.
+The public demo DB contains synthetic papers, chunks, claims, evidence links, experiment runs, failure cases, project records, decisions, open questions, and rejected ideas. The `latest-runs` query should include the freshly standardized `run_smoke_001` record. It is not your real ResearchKB.
 
 The local `.runtime` demo is safe to write to. To verify the full importer loop:
 
@@ -145,7 +146,7 @@ database in read-only mode, builds an in-memory FTS5 index, and implements the t
 from [docs/agent_tool_contracts.md](docs/agent_tool_contracts.md):
 
 `search_papers`, `search_chunks`, `search_claims`, `search_evidence`, `find_failure_cases`,
-`find_recent_runs`, `compare_runs`, `get_health`.
+`find_recent_runs`, `compare_runs`, `get_project_status`, `get_health`.
 
 Per-surface coverage lives in [docs/tool_matrix.md](docs/tool_matrix.md); transport,
 protocol version, tested clients, and security boundary in
@@ -172,7 +173,7 @@ Every tool result carries `source_type`, `source_id`, `locator`, `snippet`, and 
 plus `missing_context` and `warnings`, so agent answers stay auditable. The server never
 writes to the database.
 
-For a session-start context block (recent runs, open failure cases, next actions):
+For a session-start context block (project goals, decisions, open questions, recent runs, open failure cases, next actions):
 
 ```powershell
 rk-memory session-brief --root "<ResearchKBRoot>"
@@ -302,13 +303,14 @@ For KV-cache reuse work, see [researchkb/contracts/kv_cache_reuse_metrics_contra
 |   |-- README.md
 |   `-- retrieval_eval.jsonl
 |-- schemas/
-|   `-- 6 JSON Schemas (papers, chunks, claims, evidence links, metrics, problem cases)
+|   `-- 10 JSON Schemas (papers, chunks, claims, evidence links, metrics, problem cases, project memory)
 |-- examples/
 |   |-- smoke-run/
 |   |-- standardized-run/
 |   |-- failure-case/
 |   |-- paper-memory/
 |   |-- note-memory/
+|   |-- project-memory/
 |   `-- agent-answers/
 |-- launchers/
 |   `-- Claude Code launcher templates
@@ -368,7 +370,7 @@ For KV-cache reuse work, see [researchkb/contracts/kv_cache_reuse_metrics_contra
 - `scripts/schema_check.py`: read-only table/column readiness check before running write-capable importers.
 - `scripts/standardize_run.py`: converts mixed experiment outputs and `METRIC key=value` logs into `run_record.json`, and scaffolds a `problem_case.draft.json` for failed runs.
 - `scripts/auto_standardize_runs.py`: scans watched paths and incrementally writes missing or stale `run_record.json` files.
-- `scripts/session_brief.py`: compact session-start brief with recent runs, open failure cases, and effectiveness metrics.
+- `scripts/session_brief.py`: compact session-start brief with project memory, recent runs, open failure cases, and effectiveness metrics.
 - `scripts/eval_retrieval.py`: retrieval-quality eval (recall@k, MRR, precision@1, guard pass rate) against a gold query set.
 - `scripts/check_citations.py`: verifies source IDs cited in an agent answer against the database.
 - `scripts/validate_examples.py`: validates example JSON files against schemas.
@@ -383,6 +385,7 @@ For KV-cache reuse work, see [researchkb/contracts/kv_cache_reuse_metrics_contra
 - [examples/failure-case](examples/failure-case): a synthetic reusable failure case.
 - [examples/paper-memory](examples/paper-memory): paper, chunk, claim, evidence-link records, and a synthetic BibTeX export.
 - [examples/note-memory](examples/note-memory): a synthetic Markdown reading note with frontmatter and claim markers.
+- [examples/project-memory](examples/project-memory): synthetic project, decision, open-question, and rejected-idea records.
 - [examples/agent-answers](examples/agent-answers): good vs bad troubleshooting answers.
 
 ## Design Docs

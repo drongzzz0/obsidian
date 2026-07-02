@@ -2,7 +2,10 @@
 
 ## Unreleased
 
-- Nothing yet.
+- Added synthetic project-memory records and schemas: `research_projects`, `decision_logs`, `open_questions`, and `rejected_ideas`.
+- Added demo SQLite tables and seed data for project goals, decisions, open questions, and rejected ideas.
+- Added read-only project status retrieval through `QueryEngine.project_status`, `rk-memory project-status`, and MCP `get_project_status`.
+- Expanded `session-brief` so session-start context includes project memory in addition to recent runs and failure cases.
 
 ## v0.4.0 - 2026-07-02
 

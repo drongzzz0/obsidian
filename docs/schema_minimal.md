@@ -115,6 +115,67 @@ Reusable failure memory.
 | `confidence` | float | Confidence from 0 to 1 |
 | `created_at` | datetime | Creation time |
 
+### `research_projects`
+
+Project-level memory for the current research direction.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `project_id` | string | Stable project ID |
+| `name` | string | Human-readable project name |
+| `goal` | text | Current project goal |
+| `active_hypothesis` | text | Current working hypothesis |
+| `constraints_json` | JSON | Privacy, compute, deadline, or scope constraints |
+| `status` | enum | `active`, `paused`, `completed`, `archived` |
+| `tags_json` | JSON | Topic tags |
+| `created_at` | datetime | Creation time |
+| `updated_at` | datetime | Last update time |
+
+### `decision_logs`
+
+Decisions made during the project, including why alternatives were rejected.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `decision_id` | string | Stable decision ID |
+| `project_id` | string | Linked project ID |
+| `decision` | text | Decision summary |
+| `rationale` | text | Why the decision was made |
+| `evidence_ids_json` | JSON | Supporting source IDs |
+| `rejected_options_json` | JSON | Alternatives considered and rejected |
+| `next_action` | text | Concrete follow-up |
+| `created_at` | datetime | Decision time |
+| `created_by` | string | `human`, `agent`, `script`, or local convention |
+
+### `open_questions`
+
+Unresolved questions that should shape future experiments or reading.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `question_id` | string | Stable question ID |
+| `project_id` | string | Linked project ID |
+| `question` | text | The unresolved question |
+| `priority` | enum | `low`, `medium`, `high`, `critical` |
+| `status` | enum | `open`, `answered`, `dropped` |
+| `evidence_ids_json` | JSON | Related source IDs |
+| `next_action` | text | Concrete follow-up |
+| `created_at` | datetime | Creation time |
+
+### `rejected_ideas`
+
+Ideas that should not be retried blindly.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `idea_id` | string | Stable idea ID |
+| `project_id` | string | Linked project ID |
+| `idea` | text | Rejected idea |
+| `reason` | text | Why it was rejected |
+| `evidence_ids_json` | JSON | Supporting source IDs |
+| `reusable_parts_json` | JSON | Parts that may still be useful |
+| `created_at` | datetime | Rejection time |
+
 ### `agent_decisions`
 
 Optional record of agent recommendations and outcomes.

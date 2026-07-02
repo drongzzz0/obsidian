@@ -15,6 +15,10 @@ SCHEMA_BY_EXAMPLE = {
     ("paper-memory", "chunk.json"): "chunk.schema.json",
     ("paper-memory", "claim.json"): "claim.schema.json",
     ("paper-memory", "evidence_link.json"): "evidence_link.schema.json",
+    ("project-memory", "research_project.json"): "research_project.schema.json",
+    ("project-memory", "decision_log.json"): "decision_log.schema.json",
+    ("project-memory", "open_question.json"): "open_question.schema.json",
+    ("project-memory", "rejected_idea.json"): "rejected_idea.schema.json",
 }
 
 

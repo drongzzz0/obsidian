@@ -197,7 +197,7 @@ Without installing the package, use `"command": "python"` with
 
 For the demo, point `--root` at `<RepoRoot>/.runtime/researchkb`. The agent gets
 `search_papers`, `search_chunks`, `search_claims`, `search_evidence`, `find_failure_cases`,
-`find_recent_runs`, `compare_runs`, and `get_health`, all read-only. Coverage and
+`find_recent_runs`, `compare_runs`, `get_project_status`, and `get_health`, all read-only. Coverage and
 compatibility details: [tool_matrix.md](tool_matrix.md), [mcp_compatibility.md](mcp_compatibility.md).
 
 Verify retrieval quality and grounding with the built-in metrics:

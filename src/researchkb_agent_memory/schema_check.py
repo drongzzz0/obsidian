@@ -89,12 +89,54 @@ REQUIRED_TABLES: dict[str, set[str]] = {
         "confidence",
         "created_at",
     },
+    "research_projects": {
+        "project_id",
+        "name",
+        "goal",
+        "active_hypothesis",
+        "constraints_json",
+        "status",
+        "tags_json",
+        "created_at",
+        "updated_at",
+    },
+    "decision_logs": {
+        "decision_id",
+        "project_id",
+        "decision",
+        "rationale",
+        "evidence_ids_json",
+        "rejected_options_json",
+        "next_action",
+        "created_at",
+        "created_by",
+    },
+    "open_questions": {
+        "question_id",
+        "project_id",
+        "question",
+        "priority",
+        "status",
+        "evidence_ids_json",
+        "next_action",
+        "created_at",
+    },
+    "rejected_ideas": {
+        "idea_id",
+        "project_id",
+        "idea",
+        "reason",
+        "evidence_ids_json",
+        "reusable_parts_json",
+        "created_at",
+    },
 }
 
 IMPORTER_TABLES = {
     "import-runs": {"experiment_runs"},
     "import-bibtex": {"papers"},
     "import-notes": {"chunks", "claims", "evidence_links"},
+    "project-memory": {"research_projects", "decision_logs", "open_questions", "rejected_ideas"},
 }
 
 

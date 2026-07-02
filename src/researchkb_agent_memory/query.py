@@ -27,6 +27,16 @@ SEARCH_SPECS = {
         ["symptom", "final_solution", "context_json", "suspected_causes_json", "tried_fixes_json"],
     ),
     "evidence_links": ("evidence_id", ["quote_or_snippet", "locator"]),
+    "research_projects": (
+        "project_id",
+        ["name", "goal", "active_hypothesis", "constraints_json", "status", "tags_json"],
+    ),
+    "decision_logs": (
+        "decision_id",
+        ["decision", "rationale", "evidence_ids_json", "rejected_options_json", "next_action"],
+    ),
+    "open_questions": ("question_id", ["question", "priority", "status", "evidence_ids_json", "next_action"]),
+    "rejected_ideas": ("idea_id", ["idea", "reason", "evidence_ids_json", "reusable_parts_json"]),
 }
 
 
@@ -334,6 +344,169 @@ class QueryEngine:
         if not runs:
             missing.append("No runs matched the requested filters.")
         return {"runs": runs, "missing_context": missing, "warnings": warnings}
+
+    def project_status(self, project: str | None = None, limit: int = 5) -> dict[str, Any]:
+        limit = clamp_limit(limit)
+        warnings: list[str] = []
+        for table in ("research_projects", "decision_logs", "open_questions", "rejected_ideas"):
+            warnings.extend(self._base_warnings(table))
+
+        projects = self._research_projects(project, limit)
+        project_ids = [str(record["project_id"]) for record in projects if record.get("project_id")]
+        if project and not project_ids:
+            project_ids = [project]
+
+        recent_decisions = self._decision_logs(project_ids, limit)
+        open_questions = self._open_questions(project_ids, limit)
+        rejected_ideas = self._rejected_ideas(project_ids, limit)
+
+        missing: list[str] = []
+        if not projects:
+            missing.append("No project records matched the requested filter.")
+        if not recent_decisions:
+            missing.append("No decision logs matched the requested filter.")
+        if not open_questions:
+            missing.append("No open questions matched the requested filter.")
+        if not rejected_ideas:
+            missing.append("No rejected ideas matched the requested filter.")
+        return {
+            "projects": projects,
+            "recent_decisions": recent_decisions,
+            "open_questions": open_questions,
+            "rejected_ideas": rejected_ideas,
+            "missing_context": missing,
+            "warnings": warnings,
+        }
+
+    def _research_projects(self, project: str | None, limit: int) -> list[dict[str, Any]]:
+        if "research_projects" not in self.tables:
+            return []
+        columns = self.columns["research_projects"]
+        clauses: list[str] = []
+        params: list[Any] = []
+        if project:
+            project_clauses = []
+            if "project_id" in columns:
+                project_clauses.append("lower(project_id) = ?")
+                params.append(project.lower())
+            if "name" in columns:
+                project_clauses.append("lower(name) = ?")
+                params.append(project.lower())
+            if project_clauses:
+                clauses.append(f"({' or '.join(project_clauses)})")
+        where_sql = f" where {' and '.join(clauses)}" if clauses else ""
+        order_sql = " order by updated_at desc" if "updated_at" in columns else ""
+        rows = self.conn.execute(
+            f"select * from src.research_projects{where_sql}{order_sql} limit ?",
+            (*params, limit),
+        ).fetchall()
+        return [
+            {
+                "project_id": row.get("project_id"),
+                "name": row.get("name"),
+                "goal": row.get("goal"),
+                "active_hypothesis": row.get("active_hypothesis"),
+                "constraints": parse_json_value(row.get("constraints_json")) or {},
+                "status": row.get("status"),
+                "tags": parse_json_list(row.get("tags_json")),
+                "updated_at": row.get("updated_at"),
+                "source_type": "research_project",
+                "source_id": row.get("project_id"),
+                "locator": f"research_projects:{row.get('project_id')}",
+                "snippet": str(row.get("goal") or row.get("active_hypothesis") or ""),
+                "confidence": 0.95,
+            }
+            for row in (dict(row) for row in rows)
+        ]
+
+    def _decision_logs(self, project_ids: list[str], limit: int) -> list[dict[str, Any]]:
+        rows = self._project_memory_rows("decision_logs", project_ids, limit)
+        return [
+            {
+                "decision_id": row.get("decision_id"),
+                "project_id": row.get("project_id"),
+                "decision": row.get("decision"),
+                "rationale": row.get("rationale"),
+                "evidence_ids": parse_json_list(row.get("evidence_ids_json")),
+                "rejected_options": parse_json_list(row.get("rejected_options_json")),
+                "next_action": row.get("next_action"),
+                "created_at": row.get("created_at"),
+                "source_type": "decision_log",
+                "source_id": row.get("decision_id"),
+                "locator": f"decision_logs:{row.get('decision_id')}",
+                "snippet": str(row.get("decision") or ""),
+                "confidence": 0.9,
+            }
+            for row in rows
+        ]
+
+    def _open_questions(self, project_ids: list[str], limit: int) -> list[dict[str, Any]]:
+        rows = self._project_memory_rows("open_questions", project_ids, limit, status_filter="open")
+        return [
+            {
+                "question_id": row.get("question_id"),
+                "project_id": row.get("project_id"),
+                "question": row.get("question"),
+                "priority": row.get("priority"),
+                "status": row.get("status"),
+                "evidence_ids": parse_json_list(row.get("evidence_ids_json")),
+                "next_action": row.get("next_action"),
+                "created_at": row.get("created_at"),
+                "source_type": "open_question",
+                "source_id": row.get("question_id"),
+                "locator": f"open_questions:{row.get('question_id')}",
+                "snippet": str(row.get("question") or ""),
+                "confidence": 0.85,
+            }
+            for row in rows
+        ]
+
+    def _rejected_ideas(self, project_ids: list[str], limit: int) -> list[dict[str, Any]]:
+        rows = self._project_memory_rows("rejected_ideas", project_ids, limit)
+        return [
+            {
+                "idea_id": row.get("idea_id"),
+                "project_id": row.get("project_id"),
+                "idea": row.get("idea"),
+                "reason": row.get("reason"),
+                "evidence_ids": parse_json_list(row.get("evidence_ids_json")),
+                "reusable_parts": parse_json_list(row.get("reusable_parts_json")),
+                "created_at": row.get("created_at"),
+                "source_type": "rejected_idea",
+                "source_id": row.get("idea_id"),
+                "locator": f"rejected_ideas:{row.get('idea_id')}",
+                "snippet": str(row.get("idea") or ""),
+                "confidence": 0.85,
+            }
+            for row in rows
+        ]
+
+    def _project_memory_rows(
+        self,
+        table: str,
+        project_ids: list[str],
+        limit: int,
+        status_filter: str | None = None,
+    ) -> list[dict[str, Any]]:
+        if table not in self.tables:
+            return []
+        columns = self.columns[table]
+        clauses: list[str] = []
+        params: list[Any] = []
+        if project_ids and "project_id" in columns:
+            placeholders = ", ".join(["?"] * len(project_ids))
+            clauses.append(f"project_id in ({placeholders})")
+            params.extend(project_ids)
+        if status_filter and "status" in columns:
+            clauses.append("lower(status) = ?")
+            params.append(status_filter.lower())
+        where_sql = f" where {' and '.join(clauses)}" if clauses else ""
+        order_sql = " order by created_at desc" if "created_at" in columns else ""
+        rows = self.conn.execute(
+            f"select * from src.{quote_identifier(table)}{where_sql}{order_sql} limit ?",
+            (*params, limit),
+        ).fetchall()
+        return [dict(row) for row in rows]
 
     def compare_runs(self, run_a: str, run_b: str, metrics: list[str] | None = None) -> dict[str, Any]:
         if "experiment_runs" not in self.tables:

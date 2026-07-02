@@ -44,6 +44,14 @@ def build_brief(root: Path, project: str | None = None, limit: int = 5) -> dict[
         "next_actions": judgement.get("next_actions", []),
         "recent_runs": [],
         "open_failure_cases": [],
+        "project_memory": {
+            "projects": [],
+            "recent_decisions": [],
+            "open_questions": [],
+            "rejected_ideas": [],
+            "missing_context": [],
+            "warnings": [],
+        },
     }
     if not report["database"].get("exists"):
         return brief
@@ -62,6 +70,7 @@ def build_brief(root: Path, project: str | None = None, limit: int = 5) -> dict[
             for run in runs
         ]
         brief["open_failure_cases"] = open_failure_cases(engine)
+        brief["project_memory"] = engine.project_status(project=project, limit=limit)
     return brief
 
 
@@ -112,6 +121,33 @@ def print_text_brief(brief: dict[str, Any]) -> None:
             print(f"- {case.get('problem_id')} | {case.get('symptom')}")
     else:
         print("- none open")
+    print("")
+    print("[project memory]")
+    project_memory = brief.get("project_memory", {})
+    projects = project_memory.get("projects") or []
+    if projects:
+        for project in projects:
+            print(
+                f"- {project.get('project_id')} | goal={project.get('goal')}"
+                f" | hypothesis={project.get('active_hypothesis')}"
+            )
+    else:
+        print("- no project record")
+    decisions = project_memory.get("recent_decisions") or []
+    if decisions:
+        print("[recent decisions]")
+        for decision in decisions:
+            print(f"- {decision.get('decision_id')} | {decision.get('decision')} | next={decision.get('next_action')}")
+    questions = project_memory.get("open_questions") or []
+    if questions:
+        print("[open questions]")
+        for question in questions:
+            print(f"- {question.get('question_id')} | {question.get('question')} | next={question.get('next_action')}")
+    rejected = project_memory.get("rejected_ideas") or []
+    if rejected:
+        print("[rejected ideas]")
+        for idea in rejected:
+            print(f"- {idea.get('idea_id')} | {idea.get('idea')} | reason={idea.get('reason')}")
     print("")
     print("[suggested next actions]")
     for action in brief.get("next_actions", []):

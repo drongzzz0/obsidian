@@ -100,6 +100,19 @@ def test_compare_runs_reports_deltas_and_missing_metrics(demo_root: Path) -> Non
     assert any("run_missing_999" in item for item in missing["missing_context"])
 
 
+def test_project_status_returns_project_memory(demo_root: Path) -> None:
+    with rk_query.QueryEngine(demo_root) as engine:
+        result = engine.project_status(project="project_kv_cache_reuse_demo")
+
+    assert result["projects"][0]["goal"].startswith("Evaluate whether prompt-compatible")
+    assert result["recent_decisions"][0]["decision_id"] == "decision_kv_cache_reuse_demo_001"
+    assert result["open_questions"][0]["priority"] == "high"
+    assert result["rejected_ideas"][0]["reusable_parts"] == [
+        "Prefix hashing can still be used as a first-pass candidate filter."
+    ]
+    assert result["warnings"] == []
+
+
 def test_missing_tables_are_tolerated(tmp_path: Path) -> None:
     root = tmp_path / "partial"
     db_dir = root / "db"
@@ -113,10 +126,13 @@ def test_missing_tables_are_tolerated(tmp_path: Path) -> None:
     with rk_query.QueryEngine(root) as engine:
         papers = engine.search_papers("anything")
         runs = engine.find_recent_runs()
+        project = engine.project_status()
 
     assert papers["papers"] == []
     assert any("does not exist" in warning for warning in papers["warnings"])
     assert runs["runs"][0]["run_id"] == "run_only_001"
+    assert project["projects"] == []
+    assert any("research_projects" in warning for warning in project["warnings"])
 
 
 def test_engine_is_read_only(demo_root: Path) -> None:

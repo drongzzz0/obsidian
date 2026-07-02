@@ -27,7 +27,8 @@ SERVER_INFO = {"name": "researchkb-agent-memory", "version": __version__}
 INSTRUCTIONS = (
     "Query local ResearchKB evidence before troubleshooting, planning, or novelty checks. "
     "Every result carries source_type, source_id, locator, snippet, and confidence; cite these "
-    "IDs in answers. missing_context lists what was searched but not found. All tools are read-only."
+    "IDs in answers. Use get_project_status to recover project goals, decisions, open questions, "
+    "and rejected ideas. missing_context lists what was searched but not found. All tools are read-only."
 )
 
 TOOLS: list[dict[str, Any]] = [
@@ -117,6 +118,17 @@ TOOLS: list[dict[str, Any]] = [
                 "metrics": {"type": "array", "items": {"type": "string"}},
             },
             "required": ["run_a", "run_b"],
+        },
+    },
+    {
+        "name": "get_project_status",
+        "description": "Retrieve project goals, active hypotheses, decisions, open questions, and rejected ideas.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "project": {"type": "string", "description": "Optional project_id or project name filter."},
+                "limit": {"type": "integer", "default": 5},
+            },
         },
     },
     {
@@ -236,6 +248,11 @@ class McpServer:
             if metrics is not None and not isinstance(metrics, list):
                 raise ValueError("metrics must be an array of metric names")
             return engine.compare_runs(str(arguments["run_a"]), str(arguments["run_b"]), metrics)
+        if name == "get_project_status":
+            return engine.project_status(
+                project=arguments.get("project"),
+                limit=int(arguments.get("limit", 5)),
+            )
         return None
 
     @staticmethod

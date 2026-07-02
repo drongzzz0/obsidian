@@ -73,13 +73,23 @@ Everything runs on SQLite plus the Python standard library; private data never e
   `search-evidence`.
 - The MCP server remains read-only.
 
+### Unreleased after v0.4.0: project-memory read path
+
+- Added synthetic project-memory tables and examples: `research_projects`,
+  `decision_logs`, `open_questions`, and `rejected_ideas`.
+- Added `rk-memory project-status` and MCP `get_project_status` as read-only views over
+  project goals, active hypotheses, recent decisions, open questions, and rejected ideas.
+- `session-brief` now includes project memory so a new agent session can recover "what are
+  we doing, what was decided, what is unresolved, what was ruled out".
+- Private writes are still explicit CLI work; a project-memory importer/editor remains next.
+
 ## Current Quality Numbers
 
 All measured on the synthetic demo database (see caveat below):
 
 | Metric | Value |
 | --- | --- |
-| Tests | 81 passing locally; GitHub Actions verifies the pushed commit/tag |
+| Tests | 82 passing locally; GitHub Actions verifies pushed commits |
 | Retrieval eval | recall@k 1.0, MRR 0.96, precision@1 0.92, guard pass rate 1.0 |
 | Citation validity (good-answer example) | 1.0 |
 | Demo library health | level `smoke`, metrics coverage 1.0, evidence density 1.0 |
@@ -104,10 +114,11 @@ benchmark exists yet; producing one is the goal of the v0.6 milestone.
 
 ### v0.5.0 - project memory (next up)
 
-- New record types: `research_projects` (goal, active hypothesis, constraints),
-  `decision_logs` (decision, rationale, evidence IDs, rejected options),
-  `open_questions`, and `rejected_ideas`.
-- Session brief v2 that answers "where are we, what was ruled out, what is next".
+- New record types and read-only query path: shipped in unreleased form; continue hardening
+  tests and docs.
+- Add explicit write-capable CLI import/editor for project memory records.
+- Session brief v2 that answers "where are we, what was ruled out, what is next": shipped in
+  unreleased form; next step is adding real-project examples.
 - Lightweight Obsidian/Markdown export (human-readable mirror, never the primary store).
 - `rk-memory schema init --dry-run` as explicit, opt-in schema management.
 - Hard rule carried through docs and code: **the MCP server stays read-only; all writes

@@ -1,0 +1,11 @@
+{
+  "decision_id": "decision_kv_cache_reuse_demo_001",
+  "project_id": "project_kv_cache_reuse_demo",
+  "decision": "Gate cache reuse on prompt-template compatibility before evaluating broader reuse policies.",
+  "rationale": "The negative synthetic run showed quality loss when cached prefixes came from incompatible prompts.",
+  "evidence_ids": ["run_example_negative_001", "claim_example_cache_001"],
+  "rejected_options": ["Enable reuse for all repeated prefixes without template checks."],
+  "next_action": "Add an ablation that compares strict template matching against relaxed matching.",
+  "created_at": "2026-01-02T00:00:00+00:00",
+  "created_by": "synthetic-demo"
+}

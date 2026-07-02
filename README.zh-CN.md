@@ -57,11 +57,12 @@ rk-memory standardize-run .runtime/example-project/runs/smoke-test
 rk-memory seed-demo --include-run .runtime/example-project/runs/smoke-test/run_record.json
 rk-memory health --root .runtime/researchkb
 rk-memory latest-runs --root .runtime/researchkb
+rk-memory project-status --root .runtime/researchkb
 rk-memory search-evidence "validate compatibility" --root .runtime/researchkb
 ```
 
 `rk-memory --help` 可以看到全部命令（run 导入、BibTeX 元数据导入、Markdown 笔记导入、
-检索、失败案例、运行对比、评测、引用校验、schema 检查、会话简报、MCP server）。
+检索、失败案例、运行对比、评测、引用校验、schema 检查、项目状态、会话简报、MCP server）。
 
 不想安装的话，所有功能仍可用脚本方式运行，例如
 `python scripts/init_researchkb_workspace.py`、`python scripts/standardize_run.py <run-dir>`、
@@ -77,7 +78,7 @@ rk-memory search-evidence "validate compatibility" --root .runtime/researchkb
 - 标准化后的 `run_record.json`
 - synthetic `.runtime/researchkb/db/literature.sqlite` 数据库
 
-这个公开 demo DB 只包含 synthetic papers、chunks、claims、evidence links、experiment runs 和 failure cases。`latest-runs` 查询应该能看到刚标准化出来的 `run_smoke_001` 记录。它不是你的真实 ResearchKB。
+这个公开 demo DB 只包含 synthetic papers、chunks、claims、evidence links、experiment runs、failure cases、project records、decisions、open questions 和 rejected ideas。`latest-runs` 查询应该能看到刚标准化出来的 `run_smoke_001` 记录。它不是你的真实 ResearchKB。
 
 本地 `.runtime` demo 可以安全写入。用下面命令验证完整 importer 闭环：
 
@@ -141,7 +142,7 @@ Agent 可以通过一个纯标准库实现的 MCP server 直接查询 ResearchKB
 中定义的工具契约：
 
 `search_papers`、`search_chunks`、`search_claims`、`search_evidence`、`find_failure_cases`、
-`find_recent_runs`、`compare_runs`、`get_health`。
+`find_recent_runs`、`compare_runs`、`get_project_status`、`get_health`。
 
 各层实现覆盖见 [docs/tool_matrix.md](docs/tool_matrix.md)；传输方式、协议版本、已验证客户端
 和安全边界见 [docs/mcp_compatibility.md](docs/mcp_compatibility.md)。
@@ -166,7 +167,7 @@ Agent 可以通过一个纯标准库实现的 MCP server 直接查询 ResearchKB
 每个工具结果都带 `source_type`、`source_id`、`locator`、`snippet`、`confidence`，以及
 `missing_context` 和 `warnings`，保证 Agent 回答可审计。server 不会写数据库。
 
-会话开始时注入上下文（最近 runs、未解决失败案例、下一步建议）：
+会话开始时注入上下文（项目目标、决策、开放问题、最近 runs、未解决失败案例、下一步建议）：
 
 ```powershell
 rk-memory session-brief --root "<ResearchKBRoot>"
@@ -294,13 +295,14 @@ KV-cache reuse 相关实验见 [researchkb/contracts/kv_cache_reuse_metrics_cont
 |   |-- README.md
 |   `-- retrieval_eval.jsonl
 |-- schemas/
-|   `-- 6 个 JSON Schema（papers、chunks、claims、evidence links、metrics、problem cases）
+|   `-- 10 个 JSON Schema（papers、chunks、claims、evidence links、metrics、problem cases、project memory）
 |-- examples/
 |   |-- smoke-run/
 |   |-- standardized-run/
 |   |-- failure-case/
 |   |-- paper-memory/
 |   |-- note-memory/
+|   |-- project-memory/
 |   `-- agent-answers/
 |-- launchers/
 |   `-- Claude Code launcher templates
@@ -360,7 +362,7 @@ KV-cache reuse 相关实验见 [researchkb/contracts/kv_cache_reuse_metrics_cont
 - `scripts/schema_check.py`: 只读检查 SQLite 表和字段是否满足写入型 importer 的要求。
 - `scripts/standardize_run.py`: 把混合实验输出和 `METRIC key=value` 日志转换成 `run_record.json`，失败 run 自动生成 `problem_case.draft.json` 草稿。
 - `scripts/auto_standardize_runs.py`: 扫描 watched paths，增量生成缺失或过期的 `run_record.json`。
-- `scripts/session_brief.py`: 会话开始简报，含最近 runs、未解决失败案例和有效性指标。
+- `scripts/session_brief.py`: 会话开始简报，含项目记忆、最近 runs、未解决失败案例和有效性指标。
 - `scripts/eval_retrieval.py`: 检索质量评测（recall@k、MRR、precision@1、防误报通过率）。
 - `scripts/check_citations.py`: 对照数据库验证 Agent 回答中引用的 source ID。
 - `scripts/validate_examples.py`: 用 schemas 校验 example JSON。
@@ -375,6 +377,7 @@ KV-cache reuse 相关实验见 [researchkb/contracts/kv_cache_reuse_metrics_cont
 - [examples/failure-case](examples/failure-case): 虚构的可复用失败案例。
 - [examples/paper-memory](examples/paper-memory): paper、chunk、claim、evidence-link 记录示例，以及 synthetic BibTeX 导出。
 - [examples/note-memory](examples/note-memory): 带 frontmatter 和 claim 标记的 synthetic Markdown 阅读笔记。
+- [examples/project-memory](examples/project-memory): synthetic 项目、决策、开放问题和被否 idea 记录。
 - [examples/agent-answers](examples/agent-answers): 好的和坏的 troubleshooting answer 对比。
 
 ## 核心设计文档

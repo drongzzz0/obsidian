@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.org/researchkb/decision_log.schema.json",
+  "title": "Decision Log",
+  "type": "object",
+  "required": ["decision_id", "project_id", "decision", "rationale"],
+  "additionalProperties": false,
+  "properties": {
+    "decision_id": {"type": "string", "minLength": 1},
+    "project_id": {"type": "string", "minLength": 1},
+    "decision": {"type": "string", "minLength": 1},
+    "rationale": {"type": "string", "minLength": 1},
+    "evidence_ids": {"type": "array", "items": {"type": "string"}},
+    "rejected_options": {"type": "array", "items": {"type": "string"}},
+    "next_action": {"type": "string"},
+    "created_at": {"type": "string"},
+    "created_by": {"type": "string"}
+  }
+}

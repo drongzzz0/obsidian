@@ -21,6 +21,7 @@ Implemented reference tools:
 - `find_failure_cases`
 - `find_recent_runs`
 - `compare_runs`
+- `get_project_status`
 - `get_health`
 
 Planned/composite tools (contract only, **not** served by the MCP reference implementation yet;
@@ -56,6 +57,7 @@ Every tool should also return:
 | `find_failure_cases` | Find similar historical failures | implemented |
 | `find_recent_runs` | Retrieve recent experiment runs | implemented |
 | `compare_runs` | Compare metrics or decisions across runs | implemented |
+| `get_project_status` | Retrieve project goals, decisions, open questions, and rejected ideas | implemented |
 | `get_health` | Report readiness level and effectiveness metrics | implemented |
 | `find_methods` | Find methods for a topic or problem | planned |
 | `find_limitations` | Find limitations and failure modes | planned |
@@ -322,6 +324,46 @@ Output:
       "confidence": 0.95
     }
   ],
+  "missing_context": [],
+  "warnings": []
+}
+```
+
+### `get_project_status`
+
+Input:
+
+```json
+{
+  "project": "project_kv_cache_reuse_demo",
+  "limit": 5
+}
+```
+
+Output:
+
+```json
+{
+  "projects": [
+    {
+      "project_id": "project_kv_cache_reuse_demo",
+      "goal": "Evaluate whether prompt-compatible KV cache reuse can reduce serving latency without quality loss.",
+      "active_hypothesis": "Cache reuse is only safe when prompt templates, task distribution, and privacy constraints are compatible.",
+      "source_type": "research_project",
+      "source_id": "project_kv_cache_reuse_demo",
+      "locator": "research_projects:project_kv_cache_reuse_demo"
+    }
+  ],
+  "recent_decisions": [
+    {
+      "decision_id": "decision_kv_cache_reuse_demo_001",
+      "decision": "Gate cache reuse on prompt-template compatibility before evaluating broader reuse policies.",
+      "evidence_ids": ["run_example_negative_001", "claim_example_cache_001"],
+      "next_action": "Add an ablation that compares strict template matching against relaxed matching."
+    }
+  ],
+  "open_questions": [],
+  "rejected_ideas": [],
   "missing_context": [],
   "warnings": []
 }

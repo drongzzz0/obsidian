@@ -1,0 +1,14 @@
+{
+  "project_id": "project_kv_cache_reuse_demo",
+  "name": "Synthetic KV Cache Reuse Study",
+  "goal": "Evaluate whether prompt-compatible KV cache reuse can reduce serving latency without quality loss.",
+  "active_hypothesis": "Cache reuse is only safe when prompt templates, task distribution, and privacy constraints are compatible.",
+  "constraints": {
+    "privacy": "Do not store raw user prompts in public examples.",
+    "compute": "Use a small synthetic benchmark before real workloads."
+  },
+  "status": "active",
+  "tags": ["kv-cache", "agent-memory", "synthetic"],
+  "created_at": "2026-01-01T00:00:00+00:00",
+  "updated_at": "2026-01-02T00:00:00+00:00"
+}

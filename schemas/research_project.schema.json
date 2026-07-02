@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.org/researchkb/research_project.schema.json",
+  "title": "Research Project",
+  "type": "object",
+  "required": ["project_id", "name", "goal", "active_hypothesis", "status"],
+  "additionalProperties": false,
+  "properties": {
+    "project_id": {"type": "string", "minLength": 1},
+    "name": {"type": "string", "minLength": 1},
+    "goal": {"type": "string", "minLength": 1},
+    "active_hypothesis": {"type": "string", "minLength": 1},
+    "constraints": {"type": "object"},
+    "status": {"type": "string", "enum": ["active", "paused", "completed", "archived"]},
+    "tags": {"type": "array", "items": {"type": "string"}},
+    "created_at": {"type": "string"},
+    "updated_at": {"type": "string"}
+  }
+}

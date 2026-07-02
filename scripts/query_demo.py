@@ -48,6 +48,10 @@ def main() -> int:
     compare.add_argument("run_b")
     compare.add_argument("--metric", action="append", dest="metrics")
 
+    project_status = subparsers.add_parser("project-status", help="Show synthetic project memory.")
+    project_status.add_argument("--project")
+    project_status.add_argument("--limit", type=int, default=5)
+
     args = parser.parse_args()
     db_path = args.root / "db" / "literature.sqlite"
     if not db_path.exists():
@@ -66,6 +70,8 @@ def main() -> int:
             result = engine.search_claims(args.query, args.limit)
         elif args.command == "compare-runs":
             result = engine.compare_runs(args.run_a, args.run_b, args.metrics)
+        elif args.command == "project-status":
+            result = engine.project_status(project=args.project, limit=args.limit)
         else:
             raise ValueError(f"Unknown command: {args.command}")
     print(json.dumps(result, ensure_ascii=False, indent=2))

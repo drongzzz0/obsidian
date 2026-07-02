@@ -1,0 +1,9 @@
+{
+  "idea_id": "idea_kv_cache_reuse_demo_001",
+  "project_id": "project_kv_cache_reuse_demo",
+  "idea": "Reuse every cached prefix that shares the same first 32 tokens.",
+  "reason": "The heuristic ignores prompt-template compatibility and can reuse incompatible hidden state.",
+  "evidence_ids": ["claim_example_cache_001"],
+  "reusable_parts": ["Prefix hashing can still be used as a first-pass candidate filter."],
+  "created_at": "2026-01-02T00:00:00+00:00"
+}

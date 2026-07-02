@@ -24,6 +24,7 @@ def test_schema_check_demo_database_is_ready(tmp_path: Path) -> None:
         "import-runs": True,
         "import-bibtex": True,
         "import-notes": True,
+        "project-memory": True,
     }
 
 
@@ -57,6 +58,7 @@ def test_schema_check_reports_missing_tables_and_columns(tmp_path: Path) -> None
     assert report["import_ready"]["import-runs"] is False
     assert report["import_ready"]["import-bibtex"] is False
     assert report["import_ready"]["import-notes"] is False
+    assert report["import_ready"]["project-memory"] is False
 
 
 def test_schema_check_accepts_explicit_db_path(tmp_path: Path) -> None:

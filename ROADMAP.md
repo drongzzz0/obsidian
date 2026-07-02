@@ -58,6 +58,7 @@ This project is intended to grow from a workflow template into a small, verifiab
 
 ## Phase 9: Project Memory
 
-- Add project-level memory records for goals, active hypotheses, constraints, decisions, open questions, and rejected ideas.
-- Extend `session-brief` so agents can answer what changed, what was ruled out, and what the next concrete action is.
+- Add project-level memory records for goals, active hypotheses, constraints, decisions, open questions, and rejected ideas. (read-only demo/query path shipped in unreleased v0.5.0 work)
+- Extend `session-brief` so agents can answer what changed, what was ruled out, and what the next concrete action is. (shipped in unreleased v0.5.0 work)
+- Add explicit write-capable CLI import/editor commands for project memory records.
 - Add human-readable Markdown/Obsidian export as a mirror of the SQLite source of truth.
